@@ -1,0 +1,21 @@
+{
+  "name": "Àṣẹ Àlákétú Ilé Iforití — Tenda Espírita Caboclo 7 Flechas",
+  "short_name": "Ilé Iforití",
+  "description": "Sistema digital de senhas, fila ao vivo e gestão de atendimentos espirituais — Tenda Espírita Caboclo 7 Flechas.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0f5132",
+  "background_color": "#f8fafc",
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "./logo.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+

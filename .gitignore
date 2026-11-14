@@ -1,0 +1,16 @@
+# Dependências e build
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Variáveis de ambiente sensíveis
+.env
+.env.local
+.env.*.local
+
+# Editores e sistema
+.DS_Store
+Thumbs.db
+*.log
+

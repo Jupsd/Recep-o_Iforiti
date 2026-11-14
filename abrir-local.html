@@ -1,0 +1,4494 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <meta name="theme-color" content="#0f5132" />
+    <link rel="manifest" href="./manifest.json" />
+    <link rel="icon" type="image/png" href="./public/logo.png" />
+    <link rel="apple-touch-icon" href="./public/logo.png" />
+    <title>Àṣẹ Àlákétú Ilé Iforití — Tenda Espírita Caboclo 7 Flechas</title>
+    <style>
+      :root {
+        --bg: #f4f7f5;
+        --surface: #ffffff;
+        --surface-alt: #f8faf9;
+        --border: #dde6e0;
+        --text: #102118;
+        --muted: #52635a;
+        --primary: #0f5132;
+        --primary-dark: #0a3822;
+        --primary-soft: #e6f4ec;
+        --gold: #b45309;
+        --gold-soft: #fef3c7;
+        --danger: #b91c1c;
+        --danger-soft: #fee2e2;
+        --info: #1d4ed8;
+        --info-soft: #dbeafe;
+        --shadow: 0 4px 18px rgba(15, 81, 50, 0.08);
+        --radius: 16px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.45;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      .app-shell {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .topbar {
+        background: linear-gradient(135deg, #0b3b24 0%, #0f5132 65%, #146c43 100%);
+        color: #fff;
+        padding: 12px 16px;
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.14);
+      }
+
+      .topbar-inner {
+        max-width: 1120px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+      }
+
+      .brand-logo {
+        width: 48px;
+        height: 48px;
+        border-radius: 999px;
+        object-fit: cover;
+        background: #fff;
+        border: 2px solid #fde68a;
+        flex-shrink: 0;
+      }
+
+      .brand-title {
+        font-weight: 800;
+        font-size: 1.05rem;
+        line-height: 1.15;
+        letter-spacing: 0.01em;
+      }
+
+      .brand-sub {
+        font-size: 0.78rem;
+        color: #d1fae5;
+        font-weight: 500;
+      }
+
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .mode-pill {
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.16);
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        color: #fef3c7;
+      }
+
+      .container {
+        max-width: 1120px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 18px 16px 40px;
+        flex: 1;
+      }
+
+      .container-narrow {
+        max-width: 640px;
+        margin: 0 auto;
+      }
+
+      .subnav {
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        padding: 8px 16px;
+      }
+
+      .subnav-inner {
+        max-width: 1120px;
+        margin: 0 auto;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .nav-tab {
+        padding: 8px 14px;
+        border-radius: 10px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        transition: 0.15s;
+      }
+
+      .nav-tab:hover {
+        background: var(--primary-soft);
+        color: var(--primary);
+      }
+
+      .nav-tab.active {
+        background: var(--primary);
+        color: #fff;
+      }
+
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 18px;
+        box-shadow: var(--shadow);
+        margin-bottom: 16px;
+      }
+
+      .card-muted {
+        background: var(--surface-alt);
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        padding: 10px 16px;
+        font-weight: 700;
+        font-size: 0.92rem;
+        cursor: pointer;
+        transition: 0.15s;
+      }
+
+      .btn:disabled {
+        opacity: 0.48;
+        cursor: not-allowed;
+      }
+
+      .btn-sm {
+        padding: 6px 11px;
+        font-size: 0.8rem;
+        border-radius: 9px;
+      }
+
+      .btn-lg {
+        padding: 14px 20px;
+        font-size: 1rem;
+        width: 100%;
+      }
+
+      .btn-primary {
+        background: var(--primary);
+        color: #fff;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        background: var(--primary-dark);
+      }
+
+      .btn-gold {
+        background: #d97706;
+        color: #fff;
+      }
+
+      .btn-gold:hover:not(:disabled) {
+        background: #b45309;
+      }
+
+      .btn-danger {
+        background: var(--danger);
+        color: #fff;
+      }
+
+      .btn-danger:hover:not(:disabled) {
+        background: #991b1b;
+      }
+
+      .btn-outline {
+        background: #fff;
+        color: var(--primary);
+        border-color: var(--border);
+      }
+
+      .btn-outline:hover:not(:disabled) {
+        background: var(--primary-soft);
+        border-color: var(--primary);
+      }
+
+      .btn-ghost-light {
+        background: rgba(255, 255, 255, 0.14);
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.25);
+      }
+
+      .btn-ghost-light:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.24);
+      }
+
+      .field {
+        margin-bottom: 14px;
+      }
+
+      .label {
+        display: block;
+        font-size: 0.84rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+        color: var(--text);
+      }
+
+      .input,
+      .select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1.5px solid #cbd5e1;
+        border-radius: 10px;
+        background: #fff;
+        color: var(--text);
+        font-size: 0.95rem;
+      }
+
+      .input:focus,
+      .select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(15, 81, 50, 0.14);
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+      }
+
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 12px;
+      }
+
+      .grid-4 {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 10px;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 9px;
+        border-radius: 999px;
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+      }
+
+      .badge-green {
+        background: var(--primary-soft);
+        color: var(--primary);
+      }
+
+      .badge-gold {
+        background: var(--gold-soft);
+        color: var(--gold);
+      }
+
+      .badge-red {
+        background: var(--danger-soft);
+        color: var(--danger);
+      }
+
+      .badge-blue {
+        background: var(--info-soft);
+        color: var(--info);
+      }
+
+      .badge-gray {
+        background: #e2e8f0;
+        color: #334155;
+      }
+
+      .entity-option {
+        text-align: left;
+        width: 100%;
+        border: 2px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+        background: #fff;
+        cursor: pointer;
+        transition: 0.15s;
+      }
+
+      .entity-option:hover:not(:disabled) {
+        border-color: var(--primary);
+        background: #f6fbf8;
+      }
+
+      .entity-option.selected {
+        border-color: var(--primary);
+        background: var(--primary-soft);
+        box-shadow: 0 0 0 3px rgba(15, 81, 50, 0.12);
+      }
+
+      .entity-option:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+        background: #f8fafc;
+      }
+
+      .ticket-hero {
+        text-align: center;
+        border: 2px solid var(--primary);
+        background: linear-gradient(180deg, #ffffff 0%, #f1f8f4 100%);
+      }
+
+      .ticket-number {
+        font-size: 4rem;
+        font-weight: 900;
+        color: var(--primary);
+        line-height: 1;
+        margin: 8px 0;
+        letter-spacing: 0.03em;
+      }
+
+      .alert {
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 14px;
+        font-size: 0.9rem;
+        border: 1px solid transparent;
+      }
+
+      .alert-warn {
+        background: #fffbeb;
+        border-color: #fde68a;
+        color: #92400e;
+      }
+
+      .alert-err {
+        background: #fef2f2;
+        border-color: #fecaca;
+        color: #991b1b;
+      }
+
+      .alert-ok {
+        background: #ecfdf5;
+        border-color: #a7f3d0;
+        color: #065f46;
+      }
+
+      .alert-call {
+        background: #0f5132;
+        color: #fff;
+        border: 3px solid #f59e0b;
+        animation: pulseBorder 1.4s infinite;
+      }
+
+      @keyframes pulseBorder {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.01);
+        }
+      }
+
+      .stat-box {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 12px;
+      }
+
+      .stat-val {
+        font-size: 1.65rem;
+        font-weight: 900;
+        line-height: 1.1;
+      }
+
+      .stat-lbl {
+        font-size: 0.78rem;
+        color: var(--muted);
+        font-weight: 700;
+      }
+
+      .table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.86rem;
+        background: #fff;
+      }
+
+      th,
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #eef2f0;
+        text-align: left;
+        vertical-align: middle;
+      }
+
+      th {
+        background: #f3f7f4;
+        font-weight: 800;
+        color: var(--primary);
+        white-space: nowrap;
+      }
+
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.58);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        z-index: 60;
+      }
+
+      .modal-card {
+        background: #fff;
+        border-radius: 18px;
+        max-width: 480px;
+        width: 100%;
+        padding: 20px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+        max-height: 92vh;
+        overflow-y: auto;
+      }
+
+      .row-flex {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .muted {
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .qr-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 16px;
+        border: 2px dashed var(--border);
+        border-radius: 14px;
+        background: #fff;
+      }
+
+      .poster-only {
+        display: none;
+      }
+
+      footer {
+        text-align: center;
+        padding: 14px 16px;
+        color: var(--muted);
+        font-size: 0.78rem;
+        border-top: 1px solid var(--border);
+        background: #fff;
+      }
+
+      @media print {
+        .no-print,
+        .topbar,
+        .subnav,
+        footer {
+          display: none !important;
+        }
+        body {
+          background: #fff;
+        }
+        .poster-only {
+          display: block !important;
+          text-align: center;
+          padding: 20px;
+        }
+        .print-hide-main {
+          display: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app" class="app-shell"></div>
+
+    <script>
+      (function () {
+        'use strict';
+
+        // ============================================================
+        // CONSTANTES E CHAVES (Compatível com versão React/Vite)
+        // ============================================================
+        var TERREIRO_NOME = 'Àṣẹ Àlákétú Ilé Iforití';
+        var TERREIRO_SUB = 'Tenda Espírita Caboclo 7 Flechas';
+        var LOGO_PATH = './public/logo.png';
+        var LOCAL_DB_KEY = 'iforiti_local_db_v2';
+        var LOCAL_AUTH_KEY = 'iforiti_local_auth_v1';
+        var COMP_LIST_KEY = 'iforiti_comprovantes_v2';
+        var COMP_ACTIVE_KEY = 'iforiti_comprovante_ativo_id_v2';
+        var SUPABASE_RUNTIME_KEY = 'iforiti_supabase_runtime_v1';
+        var CHANNEL_NAME = 'iforiti_realtime_v1';
+
+        var STATUS_LABEL = {
+          AGUARDANDO: 'Aguardando na fila',
+          EM_ATENDIMENTO: 'Em atendimento agora',
+          ATENDIDO: 'Atendimento finalizado',
+          AUSENTE: 'Ausente / Desistência',
+          NAO_ATENDIDO: 'Não atendido (Gira encerrada)',
+        };
+
+        var STATUS_BADGE = {
+          AGUARDANDO: 'badge-gold',
+          EM_ATENDIMENTO: 'badge-green',
+          ATENDIDO: 'badge-blue',
+          AUSENTE: 'badge-red',
+          NAO_ATENDIDO: 'badge-gray',
+        };
+
+        var state = {
+          route: '/',
+          selectedEscalaId: null,
+          filterEntidadeId: 'ALL',
+          showHistory: false,
+          ausenteTargetId: null,
+          manualModalOpen: false,
+          adminTab: 'gira',
+          reportFilters: {
+            gira_id: 'ALL',
+            entidade_id: 'ALL',
+            status: 'ALL',
+            busca: '',
+          },
+          draftEscalas: [],
+          flash: null, // { type: 'ok' | 'err' | 'warn', text: string }
+          lastAlertedCalledId: null,
+          soundEnabled: true,
+          voiceEnabled: true,
+          qrCustomUrl: '',
+          editingEntidadeId: null,
+          editingMembroId: null,
+          supabaseBusy: false,
+          supabaseCache: null,
+          deferredPrompt: null,
+        };
+
+        var bc = null;
+        try {
+          if (typeof BroadcastChannel !== 'undefined') {
+            bc = new BroadcastChannel(CHANNEL_NAME);
+            bc.onmessage = function () {
+              if (!isSupabaseActive()) {
+                render();
+              } else {
+                syncSupabaseState(true);
+              }
+            };
+          }
+        } catch (e) {}
+
+        // ============================================================
+        // UTILITÁRIOS SEGUROS
+        // ============================================================
+        function esc(str) {
+          if (str === null || str === undefined) return '';
+          return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+        }
+
+        function uid() {
+          if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+          }
+          return (
+            'id-' +
+            Date.now().toString(36) +
+            '-' +
+            Math.random().toString(36).slice(2, 10)
+          );
+        }
+
+        function padSenha(n) {
+          var s = String(Number(n) || 0);
+          while (s.length < 3) s = '0' + s;
+          return s;
+        }
+
+        function onlyDigits(v) {
+          return String(v || '').replace(/\D/g, '');
+        }
+
+        function formatPhone(v) {
+          var d = onlyDigits(v).slice(0, 11);
+          if (d.length <= 2) return d;
+          if (d.length <= 6) return '(' + d.slice(0, 2) + ') ' + d.slice(2);
+          if (d.length <= 10) {
+            return '(' + d.slice(0, 2) + ') ' + d.slice(2, 6) + '-' + d.slice(6);
+          }
+          return '(' + d.slice(0, 2) + ') ' + d.slice(2, 7) + '-' + d.slice(7);
+        }
+
+        function todayIso() {
+          var d = new Date();
+          var m = String(d.getMonth() + 1).padStart(2, '0');
+          var day = String(d.getDate()).padStart(2, '0');
+          return d.getFullYear() + '-' + m + '-' + day;
+        }
+
+        function formatDateBr(isoDate) {
+          if (!isoDate) return '-';
+          var parts = String(isoDate).slice(0, 10).split('-');
+          if (parts.length !== 3) return isoDate;
+          return parts[2] + '/' + parts[1] + '/' + parts[0];
+        }
+
+        function formatTimeBr(isoStr) {
+          if (!isoStr) return '-';
+          var d = new Date(isoStr);
+          if (isNaN(d.getTime())) return '-';
+          return d.toLocaleTimeString('pt-BR', {
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+        }
+
+        function formatDateTimeBr(isoStr) {
+          if (!isoStr) return '-';
+          var d = new Date(isoStr);
+          if (isNaN(d.getTime())) return '-';
+          return d.toLocaleString('pt-BR');
+        }
+
+        function setFlash(type, text) {
+          state.flash = { type: type, text: text };
+        }
+
+        function broadcastChange(reason) {
+          try {
+            if (bc) bc.postMessage({ reason: reason || 'update', ts: Date.now() });
+          } catch (e) {}
+        }
+
+        // ============================================================
+        // BANCO LOCAL & SEED INICIAL (REGRA ESTRITA: GIRAS VAZIA)
+        // ============================================================
+        function createInitialSeed() {
+          var now = new Date().toISOString();
+          return {
+            versao: 2,
+            entidades: [
+              {
+                id: 'ent-sete-flechas',
+                nome: 'Caboclo Sete Flechas',
+                descricao: 'Linha de Oxóssi — passes e orientações',
+                ativo: true,
+                criado_em: now,
+              },
+              {
+                id: 'ent-jurema',
+                nome: 'Cabocla Jurema',
+                descricao: 'Linha das Matas — curas e aconselhamento',
+                ativo: true,
+                criado_em: now,
+              },
+              {
+                id: 'ent-maria-conga',
+                nome: 'Vovó Maria Conga',
+                descricao: 'Linha dos Pretos Velhos — benzedura e acolhimento',
+                ativo: true,
+                criado_em: now,
+              },
+              {
+                id: 'ent-pena-branca',
+                nome: 'Caboclo Pena Branca',
+                descricao: 'Linha de Caboclos — firmeza e descarrego',
+                ativo: true,
+                criado_em: now,
+              },
+            ],
+            equipe_espiritual: [
+              {
+                id: 'eq-pai-joao',
+                nome: 'Pai João',
+                funcao: 'MEDIUM',
+                ativo: true,
+                criado_em: now,
+              },
+              {
+                id: 'eq-mae-clara',
+                nome: 'Mãe Clara',
+                funcao: 'MEDIUM',
+                ativo: true,
+                criado_em: now,
+              },
+              {
+                id: 'eq-med-carlos',
+                nome: 'Médium Carlos',
+                funcao: 'MEDIUM',
+                ativo: true,
+                criado_em: now,
+              },
+              {
+                id: 'eq-cam-lucas',
+                nome: 'Cambono Lucas',
+                funcao: 'CAMBONO',
+                ativo: true,
+                criado_em: now,
+              },
+              {
+                id: 'eq-cam-mariana',
+                nome: 'Cambona Mariana',
+                funcao: 'CAMBONO',
+                ativo: true,
+                criado_em: now,
+              },
+            ],
+            perfis_acesso: [
+              {
+                id: 'usr-admin-demo',
+                nome: 'Dirigente / Administrador',
+                email: 'admin@terreiro.org',
+                senha_demo: '123456',
+                papel: 'ADMIN',
+                ativo: true,
+              },
+              {
+                id: 'usr-cambono-demo',
+                nome: 'Cambono de Plantão',
+                email: 'cambono@terreiro.org',
+                senha_demo: '123456',
+                papel: 'CAMBONO',
+                ativo: true,
+              },
+            ],
+            // REGRA ESTRITA DO TERREIRO: nenhuma gira aberta inicialmente!
+            // Senhas e registros só são permitidos após o Administrador abrir a gira.
+            giras: [],
+            gira_escalas: [],
+            atendimentos: [],
+          };
+        }
+
+        function getLocalDb() {
+          try {
+            var raw = localStorage.getItem(LOCAL_DB_KEY);
+            if (!raw) {
+              var seed = createInitialSeed();
+              localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(seed));
+              return seed;
+            }
+            var parsed = JSON.parse(raw);
+            if (!parsed || !Array.isArray(parsed.entidades)) {
+              var reset = createInitialSeed();
+              localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(reset));
+              return reset;
+            }
+            parsed.giras = parsed.giras || [];
+            parsed.gira_escalas = parsed.gira_escalas || [];
+            parsed.atendimentos = parsed.atendimentos || [];
+            parsed.equipe_espiritual = parsed.equipe_espiritual || [];
+            parsed.perfis_acesso = parsed.perfis_acesso || createInitialSeed().perfis_acesso;
+            return parsed;
+          } catch (e) {
+            return createInitialSeed();
+          }
+        }
+
+        function saveLocalDb(db) {
+          localStorage.setItem(LOCAL_DB_KEY, JSON.stringify(db));
+          broadcastChange('db');
+        }
+
+        function getAuth() {
+          try {
+            var raw = localStorage.getItem(LOCAL_AUTH_KEY);
+            return raw ? JSON.parse(raw) : null;
+          } catch (e) {
+            return null;
+          }
+        }
+
+        function setAuth(userObj) {
+          if (!userObj) {
+            localStorage.removeItem(LOCAL_AUTH_KEY);
+          } else {
+            localStorage.setItem(LOCAL_AUTH_KEY, JSON.stringify(userObj));
+          }
+        }
+
+        function getComprovantes() {
+          try {
+            var raw = localStorage.getItem(COMP_LIST_KEY);
+            var list = raw ? JSON.parse(raw) : [];
+            return Array.isArray(list) ? list : [];
+          } catch (e) {
+            return [];
+          }
+        }
+
+        function saveComprovanteLocal(comp) {
+          var list = getComprovantes().filter(function (c) {
+            return c.atendimento_id !== comp.atendimento_id;
+          });
+          list.unshift(comp);
+          localStorage.setItem(COMP_LIST_KEY, JSON.stringify(list.slice(0, 15)));
+          localStorage.setItem(COMP_ACTIVE_KEY, comp.atendimento_id);
+        }
+
+        function getActiveComprovanteId() {
+          return localStorage.getItem(COMP_ACTIVE_KEY) || null;
+        }
+
+        function setActiveComprovanteId(id) {
+          if (id) localStorage.setItem(COMP_ACTIVE_KEY, id);
+        }
+
+        // ============================================================
+        // MODO ONLINE OPCIONAL (SUPABASE VIA FETCH NATIVO - ZERO CDN)
+        // ============================================================
+        function getSupabaseConfig() {
+          try {
+            var raw = localStorage.getItem(SUPABASE_RUNTIME_KEY);
+            if (!raw) return null;
+            var cfg = JSON.parse(raw);
+            if (cfg && cfg.url && cfg.anonKey) {
+              return {
+                url: cfg.url.replace(/\/+$/, ''),
+                anonKey: cfg.anonKey.trim(),
+                accessToken: cfg.accessToken || null,
+              };
+            }
+            return null;
+          } catch (e) {
+            return null;
+          }
+        }
+
+        function isSupabaseActive() {
+          return Boolean(getSupabaseConfig());
+        }
+
+        function sbHeaders(cfg, useAuth) {
+          var token = (useAuth && cfg.accessToken) || cfg.anonKey;
+          return {
+            apikey: cfg.anonKey,
+            Authorization: 'Bearer ' + token,
+            'Content-Type': 'application/json',
+            Prefer: 'return=representation',
+          };
+        }
+
+        async function sbFetch(path, options) {
+          var cfg = getSupabaseConfig();
+          if (!cfg) throw new Error('Supabase não configurado.');
+          var res = await fetch(cfg.url + path, options || {});
+          var text = await res.text();
+          var data = null;
+          try {
+            data = text ? JSON.parse(text) : null;
+          } catch (e) {
+            data = { message: text };
+          }
+          if (!res.ok) {
+            var msg =
+              (data && (data.message || data.error_description || data.msg || data.hint)) ||
+              'Erro HTTP ' + res.status;
+            throw new Error(msg);
+          }
+          return data;
+        }
+
+        async function syncSupabaseState(silent) {
+          var cfg = getSupabaseConfig();
+          if (!cfg) return;
+          if (!silent) state.supabaseBusy = true;
+          try {
+            var h = { headers: sbHeaders(cfg, true) };
+            var results = await Promise.all([
+              sbFetch('/rest/v1/giras?select=*&order=criado_em.desc', h),
+              sbFetch('/rest/v1/entidades?select=*&order=nome.asc', h),
+              sbFetch('/rest/v1/equipe_espiritual?select=*&order=nome.asc', h),
+              sbFetch('/rest/v1/gira_escalas?select=*&order=criado_em.asc', h),
+              sbFetch('/rest/v1/atendimentos?select=*&order=numero_senha.asc', h),
+            ]);
+            state.supabaseCache = {
+              giras: results[0] || [],
+              entidades: results[1] || [],
+              equipe_espiritual: results[2] || [],
+              gira_escalas: results[3] || [],
+              atendimentos: results[4] || [],
+              perfis_acesso: [],
+            };
+          } catch (err) {
+            if (!silent) setFlash('err', 'Falha ao sincronizar com Supabase: ' + err.message);
+          } finally {
+            state.supabaseBusy = false;
+            render();
+          }
+        }
+
+        function getActiveDb() {
+          if (isSupabaseActive()) {
+            return (
+              state.supabaseCache || {
+                giras: [],
+                entidades: [],
+                equipe_espiritual: [],
+                gira_escalas: [],
+                atendimentos: [],
+                perfis_acesso: [],
+              }
+            );
+          }
+          return getLocalDb();
+        }
+
+        // ============================================================
+        // ÁUDIO / VIBRAÇÃO / VOZ (WEB APIs NATIVAS)
+        // ============================================================
+        function playChime() {
+          try {
+            var AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            var ctx = new AudioCtx();
+            var freqs = [523.25, 659.25, 783.99];
+            freqs.forEach(function (f, i) {
+              var osc = ctx.createOscillator();
+              var gain = ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.value = f;
+              var t0 = ctx.currentTime + i * 0.14;
+              gain.gain.setValueAtTime(0.001, t0);
+              gain.gain.exponentialRampToValueAtTime(0.18, t0 + 0.03);
+              gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.36);
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.start(t0);
+              osc.stop(t0 + 0.38);
+            });
+          } catch (e) {}
+        }
+
+        function speakCall(texto) {
+          if (!state.voiceEnabled) return;
+          try {
+            if ('speechSynthesis' in window) {
+              window.speechSynthesis.cancel();
+              var u = new SpeechSynthesisUtterance(texto);
+              u.lang = 'pt-BR';
+              u.rate = 0.95;
+              window.speechSynthesis.speak(u);
+            }
+          } catch (e) {}
+        }
+
+        // ============================================================
+        // GERADOR DE QR CODE 100% PURO JAVASCRIPT (ISO 18004, ZERO CDN)
+        // Versões 1 a 14, Nível M (15% ECC), Modo Byte UTF-8
+        // ============================================================
+        var QR_SPECS_M = [
+          null,
+          { v: 1, total: 26, data: 16, ecPerBlock: 10, blocks: [[1, 16]], align: [] },
+          { v: 2, total: 44, data: 28, ecPerBlock: 16, blocks: [[1, 28]], align: [6, 18] },
+          { v: 3, total: 70, data: 44, ecPerBlock: 26, blocks: [[1, 44]], align: [6, 22] },
+          { v: 4, total: 100, data: 64, ecPerBlock: 18, blocks: [[2, 32]], align: [6, 26] },
+          { v: 5, total: 134, data: 86, ecPerBlock: 24, blocks: [[2, 43]], align: [6, 30] },
+          { v: 6, total: 172, data: 108, ecPerBlock: 16, blocks: [[4, 27]], align: [6, 34] },
+          { v: 7, total: 196, data: 124, ecPerBlock: 18, blocks: [[4, 31]], align: [6, 22, 38] },
+          {
+            v: 8,
+            total: 242,
+            data: 154,
+            ecPerBlock: 22,
+            blocks: [
+              [2, 38],
+              [2, 39],
+            ],
+            align: [6, 24, 42],
+          },
+          {
+            v: 9,
+            total: 292,
+            data: 182,
+            ecPerBlock: 22,
+            blocks: [
+              [3, 36],
+              [2, 37],
+            ],
+            align: [6, 26, 46],
+          },
+          {
+            v: 10,
+            total: 346,
+            data: 216,
+            ecPerBlock: 26,
+            blocks: [
+              [4, 43],
+              [1, 44],
+            ],
+            align: [6, 28, 50],
+          },
+          {
+            v: 11,
+            total: 404,
+            data: 254,
+            ecPerBlock: 30,
+            blocks: [
+              [1, 50],
+              [4, 51],
+            ],
+            align: [6, 30, 54],
+          },
+          {
+            v: 12,
+            total: 466,
+            data: 290,
+            ecPerBlock: 22,
+            blocks: [
+              [6, 36],
+              [2, 37],
+            ],
+            align: [6, 32, 58],
+          },
+          {
+            v: 13,
+            total: 532,
+            data: 334,
+            ecPerBlock: 22,
+            blocks: [
+              [8, 37],
+              [1, 38],
+            ],
+            align: [6, 34, 62],
+          },
+          {
+            v: 14,
+            total: 581,
+            data: 365,
+            ecPerBlock: 24,
+            blocks: [
+              [4, 40],
+              [5, 41],
+            ],
+            align: [6, 26, 46, 66],
+          },
+        ];
+
+        function gfMul(a, b) {
+          var r = 0;
+          for (var i = 7; i >= 0; i--) {
+            r = (r << 1) ^ ((r >>> 7) * 0x11d);
+            if ((b >>> i) & 1) r ^= a;
+          }
+          return r;
+        }
+
+        function rsRemainder(dataBytes, ecCount) {
+          var poly = [1];
+          var root = 1;
+          var i, j;
+          for (i = 0; i < ecCount; i++) {
+            var next = new Array(poly.length + 1).fill(0);
+            for (j = 0; j < poly.length; j++) {
+              next[j] ^= poly[j];
+              next[j + 1] ^= gfMul(poly[j], root);
+            }
+            poly = next;
+            root = gfMul(root, 2);
+          }
+          var msg = dataBytes.concat(new Array(ecCount).fill(0));
+          for (i = 0; i < dataBytes.length; i++) {
+            var factor = msg[i];
+            if (factor !== 0) {
+              for (j = 0; j < poly.length; j++) {
+                msg[i + j] ^= gfMul(poly[j], factor);
+              }
+            }
+          }
+          return msg.slice(dataBytes.length);
+        }
+
+        function encodeUtf8Bytes(text) {
+          if (typeof TextEncoder !== 'undefined') {
+            return Array.from(new TextEncoder().encode(text));
+          }
+          var s = unescape(encodeURIComponent(text));
+          var arr = [];
+          for (var i = 0; i < s.length; i++) arr.push(s.charCodeAt(i));
+          return arr;
+        }
+
+        function qrBchFormat(mask) {
+          // EC Level M = 0b00
+          var data = mask & 7;
+          var d = data << 10;
+          var g = 0x537;
+          for (var i = 4; i >= 0; i--) {
+            if ((d >> (i + 10)) & 1) d ^= g << i;
+          }
+          return ((data << 10) | d) ^ 0x5412;
+        }
+
+        function qrBchVersion(ver) {
+          var d = ver << 12;
+          var g = 0x1f25;
+          for (var i = 5; i >= 0; i--) {
+            if ((d >> (i + 12)) & 1) d ^= g << i;
+          }
+          return (ver << 12) | d;
+        }
+
+        function qrMaskCond(mask, r, c) {
+          switch (mask) {
+            case 0:
+              return (r + c) % 2 === 0;
+            case 1:
+              return r % 2 === 0;
+            case 2:
+              return c % 3 === 0;
+            case 3:
+              return (r + c) % 3 === 0;
+            case 4:
+              return (Math.floor(r / 2) + Math.floor(c / 3)) % 2 === 0;
+            case 5:
+              return ((r * c) % 2) + ((r * c) % 3) === 0;
+            case 6:
+              return (((r * c) % 2) + ((r * c) % 3)) % 2 === 0;
+            default:
+              return (((r + c) % 2) + ((r * c) % 3)) % 2 === 0;
+          }
+        }
+
+        function qrPenalty(grid, size) {
+          var pen = 0;
+          var r, c, run, prev, dark = 0;
+          for (r = 0; r < size; r++) {
+            run = 1;
+            prev = grid[r][0];
+            for (c = 1; c < size; c++) {
+              if (grid[r][c] === prev) {
+                run++;
+              } else {
+                if (run >= 5) pen += 3 + (run - 5);
+                run = 1;
+                prev = grid[r][c];
+              }
+            }
+            if (run >= 5) pen += 3 + (run - 5);
+          }
+          for (c = 0; c < size; c++) {
+            run = 1;
+            prev = grid[0][c];
+            for (r = 1; r < size; r++) {
+              if (grid[r][c] === prev) {
+                run++;
+              } else {
+                if (run >= 5) pen += 3 + (run - 5);
+                run = 1;
+                prev = grid[r][c];
+              }
+            }
+            if (run >= 5) pen += 3 + (run - 5);
+          }
+          for (r = 0; r < size - 1; r++) {
+            for (c = 0; c < size - 1; c++) {
+              var s = grid[r][c] + grid[r + 1][c] + grid[r][c + 1] + grid[r + 1][c + 1];
+              if (s === 0 || s === 4) pen += 3;
+            }
+          }
+          for (r = 0; r < size; r++) {
+            for (c = 0; c < size; c++) if (grid[r][c]) dark++;
+          }
+          var pct = (dark * 100) / (size * size);
+          pen += Math.floor(Math.abs(pct - 50) / 5) * 10;
+          return pen;
+        }
+
+        function generateQrMatrix(text) {
+          var bytes = encodeUtf8Bytes(text);
+          var spec = null;
+          for (var v = 1; v < QR_SPECS_M.length; v++) {
+            var s = QR_SPECS_M[v];
+            var ccLen = v >= 10 ? 16 : 8;
+            var capBytes = Math.floor((s.data * 8 - (4 + ccLen)) / 8);
+            if (bytes.length <= capBytes) {
+              spec = s;
+              break;
+            }
+          }
+          if (!spec) {
+            spec = QR_SPECS_M[QR_SPECS_M.length - 1];
+            bytes = bytes.slice(0, 360);
+          }
+
+          var bits = [];
+          function pushBits(val, count) {
+            for (var b = count - 1; b >= 0; b--) bits.push((val >>> b) & 1);
+          }
+
+          pushBits(4, 4); // Byte mode 0100
+          pushBits(bytes.length, spec.v >= 10 ? 16 : 8);
+          for (var i = 0; i < bytes.length; i++) pushBits(bytes[i], 8);
+
+          var maxDataBits = spec.data * 8;
+          var term = Math.min(4, maxDataBits - bits.length);
+          pushBits(0, term);
+          while (bits.length % 8 !== 0) bits.push(0);
+
+          var dataCodewords = [];
+          for (i = 0; i < bits.length; i += 8) {
+            var byteVal = 0;
+            for (var b = 0; b < 8; b++) byteVal = (byteVal << 1) | bits[i + b];
+            dataCodewords.push(byteVal);
+          }
+          var padBytes = [0xec, 0x11];
+          var padIdx = 0;
+          while (dataCodewords.length < spec.data) {
+            dataCodewords.push(padBytes[padIdx % 2]);
+            padIdx++;
+          }
+
+          var blocks = [];
+          var offset = 0;
+          var maxBlockData = 0;
+          spec.blocks.forEach(function (grp) {
+            var count = grp[0];
+            var len = grp[1];
+            if (len > maxBlockData) maxBlockData = len;
+            for (var k = 0; k < count; k++) {
+              var slice = dataCodewords.slice(offset, offset + len);
+              offset += len;
+              blocks.push({
+                data: slice,
+                ec: rsRemainder(slice, spec.ecPerBlock),
+              });
+            }
+          });
+
+          var stream = [];
+          var c, bl;
+          for (c = 0; c < maxBlockData; c++) {
+            for (bl = 0; bl < blocks.length; bl++) {
+              if (c < blocks[bl].data.length) stream.push(blocks[bl].data[c]);
+            }
+          }
+          for (c = 0; c < spec.ecPerBlock; c++) {
+            for (bl = 0; bl < blocks.length; bl++) {
+              stream.push(blocks[bl].ec[c]);
+            }
+          }
+
+          var size = spec.v * 4 + 17;
+          var grid = [];
+          var isFunc = [];
+          for (var r = 0; r < size; r++) {
+            grid.push(new Array(size).fill(0));
+            isFunc.push(new Array(size).fill(false));
+          }
+
+          function setFunc(row, col, val) {
+            grid[row][col] = val ? 1 : 0;
+            isFunc[row][col] = true;
+          }
+
+          function drawFinder(top, left) {
+            for (var dy = -1; dy <= 7; dy++) {
+              for (var dx = -1; dx <= 7; dx++) {
+                var rr = top + dy;
+                var cc = left + dx;
+                if (rr < 0 || rr >= size || cc < 0 || cc >= size) continue;
+                var dist = Math.max(Math.abs(dy - 3), Math.abs(dx - 3));
+                var val = dist !== 2 && dist !== 4;
+                setFunc(rr, cc, val);
+              }
+            }
+          }
+
+          function drawAlign(cy, cx) {
+            for (var dy = -2; dy <= 2; dy++) {
+              for (var dx = -2; dx <= 2; dx++) {
+                var dist = Math.max(Math.abs(dy), Math.abs(dx));
+                setFunc(cy + dy, cx + dx, dist !== 1);
+              }
+            }
+          }
+
+          drawFinder(0, 0);
+          drawFinder(0, size - 7);
+          drawFinder(size - 7, 0);
+
+          for (i = 8; i < size - 8; i++) {
+            setFunc(6, i, i % 2 === 0);
+            setFunc(i, 6, i % 2 === 0);
+          }
+
+          var al = spec.align;
+          for (var ai = 0; ai < al.length; ai++) {
+            for (var aj = 0; aj < al.length; aj++) {
+              if (
+                (ai === 0 && aj === 0) ||
+                (ai === 0 && aj === al.length - 1) ||
+                (ai === al.length - 1 && aj === 0)
+              ) {
+                continue;
+              }
+              drawAlign(al[ai], al[aj]);
+            }
+          }
+
+          setFunc(size - 8, 8, 1);
+
+          // Reserva placeholders de formato
+          for (i = 0; i <= 8; i++) {
+            if (i !== 6) {
+              isFunc[8][i] = true;
+              isFunc[i][8] = true;
+            }
+          }
+          for (i = 0; i < 7; i++) isFunc[size - 1 - i][8] = true;
+          for (i = 0; i < 8; i++) isFunc[8][size - 8 + i] = true;
+
+          // Version info para V7+
+          if (spec.v >= 7) {
+            var vBits = qrBchVersion(spec.v);
+            for (i = 0; i < 18; i++) {
+              var vb = (vBits >>> i) & 1;
+              var va = size - 11 + (i % 3);
+              var vcol = Math.floor(i / 3);
+              setFunc(va, vcol, vb);
+              setFunc(vcol, va, vb);
+            }
+          }
+
+          // Preenchimento em zigue-zague
+          var bitList = [];
+          for (i = 0; i < stream.length; i++) {
+            for (var b2 = 7; b2 >= 0; b2--) bitList.push((stream[i] >>> b2) & 1);
+          }
+          var bitIdx = 0;
+          var upward = true;
+          for (var right = size - 1; right >= 1; right -= 2) {
+            if (right === 6) right = 5;
+            for (var step = 0; step < size; step++) {
+              var row = upward ? size - 1 - step : step;
+              for (var sub = 0; sub < 2; sub++) {
+                var col = right - sub;
+                if (!isFunc[row][col]) {
+                  var bit = bitIdx < bitList.length ? bitList[bitIdx] : 0;
+                  bitIdx++;
+                  grid[row][col] = bit;
+                }
+              }
+            }
+            upward = !upward;
+          }
+
+          // Seleção da melhor máscara (0..7)
+          var bestMask = 0;
+          var bestPen = Infinity;
+          var bestGrid = null;
+
+          for (var mask = 0; mask < 8; mask++) {
+            var cand = grid.map(function (rowArr) {
+              return rowArr.slice();
+            });
+            for (var rr = 0; rr < size; rr++) {
+              for (var cc = 0; cc < size; cc++) {
+                if (!isFunc[rr][cc] && qrMaskCond(mask, rr, cc)) {
+                  cand[rr][cc] ^= 1;
+                }
+              }
+            }
+            var fmt = qrBchFormat(mask);
+            for (i = 0; i <= 5; i++) cand[8][i] = (fmt >>> i) & 1;
+            cand[8][7] = (fmt >>> 6) & 1;
+            cand[8][8] = (fmt >>> 7) & 1;
+            cand[7][8] = (fmt >>> 8) & 1;
+            for (i = 9; i < 15; i++) cand[14 - i][8] = (fmt >>> i) & 1;
+            for (i = 0; i < 7; i++) cand[size - 1 - i][8] = (fmt >>> i) & 1;
+            for (i = 7; i < 15; i++) cand[8][size - 15 + i] = (fmt >>> i) & 1;
+
+            var p = qrPenalty(cand, size);
+            if (p < bestPen) {
+              bestPen = p;
+              bestMask = mask;
+              bestGrid = cand;
+            }
+          }
+
+          return bestGrid;
+        }
+
+        function renderQrSvg(text, pxSize) {
+          var matrix = generateQrMatrix(text);
+          var n = matrix.length;
+          var quiet = 4;
+          var total = n + quiet * 2;
+          var paths = [];
+          for (var r = 0; r < n; r++) {
+            for (var c = 0; c < n; c++) {
+              if (matrix[r][c]) {
+                paths.push('M' + (c + quiet) + ',' + (r + quiet) + 'h1v1h-1z');
+              }
+            }
+          }
+          var dim = pxSize || 240;
+          return (
+            '<svg xmlns="http://www.w3.org/2000/svg" width="' +
+            dim +
+            '" height="' +
+            dim +
+            '" viewBox="0 0 ' +
+            total +
+            ' ' +
+            total +
+            '" shape-rendering="crispEdges">' +
+            '<rect width="' +
+            total +
+            '" height="' +
+            total +
+            '" fill="#ffffff"/>' +
+            '<path d="' +
+            paths.join('') +
+            '" fill="#0a2e1d"/>' +
+            '</svg>'
+          );
+        }
+
+        // ============================================================
+        // AÇÕES DO SISTEMA (MODO LOCAL + SUPABASE)
+        // ============================================================
+        function getGiraAberta(db) {
+          return (
+            (db.giras || []).find(function (g) {
+              return g.status === 'ABERTA';
+            }) || null
+          );
+        }
+
+        function getEscalasComVagas(db, giraId) {
+          var entMap = {};
+          (db.entidades || []).forEach(function (e) {
+            entMap[e.id] = e;
+          });
+          var eqMap = {};
+          (db.equipe_espiritual || []).forEach(function (m) {
+            eqMap[m.id] = m;
+          });
+          return (db.gira_escalas || [])
+            .filter(function (es) {
+              return es.gira_id === giraId;
+            })
+            .map(function (es) {
+              var ent = entMap[es.entidade_id] || { nome: 'Entidade', descricao: '' };
+              var med = eqMap[es.medium_id] || { nome: 'Médium' };
+              var cam = eqMap[es.cambono_id] || { nome: 'Cambono' };
+              var lim = Number(es.limite_senhas) || 0;
+              var em = Number(es.senhas_emitidas) || 0;
+              return Object.assign({}, es, {
+                entidade_nome: ent.nome,
+                entidade_descricao: ent.descricao || '',
+                medium_nome: med.nome,
+                cambono_nome: cam.nome,
+                disponiveis: Math.max(0, lim - em),
+              });
+            });
+        }
+
+        async function emitirSenhaPublica(escalaId, nomeRaw, telefoneRaw) {
+          var nome = String(nomeRaw || '').trim();
+          var telDigits = onlyDigits(telefoneRaw);
+          if (nome.length < 3) {
+            setFlash('err', 'Informe o nome completo (mínimo 3 caracteres).');
+            return render();
+          }
+          if (telDigits.length < 10 || telDigits.length > 11) {
+            setFlash('err', 'Informe um telefone/WhatsApp válido com DDD (10 ou 11 dígitos).');
+            return render();
+          }
+
+          if (isSupabaseActive()) {
+            try {
+              var cfg = getSupabaseConfig();
+              var res = await sbFetch('/rest/v1/rpc/gerar_senha_consulente', {
+                method: 'POST',
+                headers: sbHeaders(cfg, false),
+                body: JSON.stringify({
+                  p_gira_escala_id: escalaId,
+                  p_nome_consulente: nome,
+                  p_telefone_consulente: formatPhone(telDigits),
+                }),
+              });
+              var row = Array.isArray(res) ? res[0] : res;
+              var db = getActiveDb();
+              var gira = getGiraAberta(db);
+              var escItem = (db.gira_escalas || []).find(function (e) {
+                return e.id === escalaId;
+              });
+              var ent = (db.entidades || []).find(function (e) {
+                return escItem && e.id === escItem.entidade_id;
+              });
+              saveComprovanteLocal({
+                atendimento_id: row.id || row.atendimento_id,
+                gira_id: gira ? gira.id : '',
+                gira_titulo: gira ? gira.titulo : 'Gira Aberta',
+                gira_data: gira ? gira.data_gira : todayIso(),
+                gira_escala_id: escalaId,
+                entidade_nome: ent ? ent.nome : row.entidade_nome || 'Atendimento',
+                codigo_senha: row.codigo_senha,
+                numero_senha: row.numero_senha,
+                nome_consulente: nome,
+                telefone_consulente: formatPhone(telDigits),
+                criado_em: new Date().toISOString(),
+              });
+              await syncSupabaseState(true);
+              setFlash('ok', 'Senha #' + row.codigo_senha + ' gerada com sucesso!');
+              navigate('#/senha');
+            } catch (err) {
+              setFlash('err', err.message);
+              render();
+            }
+            return;
+          }
+
+          // Modo Local
+          var db = getLocalDb();
+          var gira = getGiraAberta(db);
+          if (!gira) {
+            setFlash('err', 'Nenhuma gira aberta no momento. Aguarde a liberação do Administrador.');
+            return render();
+          }
+          var escala = db.gira_escalas.find(function (e) {
+            return e.id === escalaId && e.gira_id === gira.id;
+          });
+          if (!escala) {
+            setFlash('err', 'Escala não encontrada.');
+            return render();
+          }
+          if (escala.pausada) {
+            setFlash('err', 'As senhas para esta entidade estão temporariamente pausadas.');
+            return render();
+          }
+          if (escala.senhas_emitidas >= escala.limite_senhas) {
+            setFlash('err', 'Vagas esgotadas para esta entidade nesta gira.');
+            return render();
+          }
+
+          var dup = db.atendimentos.find(function (a) {
+            return (
+              a.gira_id === gira.id &&
+              onlyDigits(a.telefone_consulente) === telDigits &&
+              (a.status === 'AGUARDANDO' || a.status === 'EM_ATENDIMENTO')
+            );
+          });
+          if (dup) {
+            var dupEsc = db.gira_escalas.find(function (e) {
+              return e.id === dup.gira_escala_id;
+            });
+            var dupEnt = db.entidades.find(function (e) {
+              return dupEsc && e.id === dupEsc.entidade_id;
+            });
+            saveComprovanteLocal({
+              atendimento_id: dup.id,
+              gira_id: gira.id,
+              gira_titulo: gira.titulo,
+              gira_data: gira.data_gira,
+              gira_escala_id: dup.gira_escala_id,
+              entidade_nome: dupEnt ? dupEnt.nome : 'Atendimento',
+              codigo_senha: dup.codigo_senha,
+              numero_senha: dup.numero_senha,
+              nome_consulente: dup.nome_consulente,
+              telefone_consulente: dup.telefone_consulente,
+              criado_em: dup.criado_em,
+            });
+            setFlash(
+              'warn',
+              'Este telefone já possui a senha #' + dup.codigo_senha + ' ativa nesta gira!'
+            );
+            navigate('#/senha');
+            return;
+          }
+
+          escala.senhas_emitidas += 1;
+          var num = escala.senhas_emitidas;
+          var cod = padSenha(num);
+          var now = new Date().toISOString();
+          var entObj = db.entidades.find(function (e) {
+            return e.id === escala.entidade_id;
+          });
+          var atendimento = {
+            id: uid(),
+            gira_id: gira.id,
+            gira_escala_id: escala.id,
+            numero_senha: num,
+            codigo_senha: cod,
+            nome_consulente: nome,
+            telefone_consulente: formatPhone(telDigits),
+            origem: 'QR_CODE',
+            status: 'AGUARDANDO',
+            criado_em: now,
+            chamado_em: null,
+            finalizado_em: null,
+          };
+          db.atendimentos.push(atendimento);
+          saveLocalDb(db);
+
+          saveComprovanteLocal({
+            atendimento_id: atendimento.id,
+            gira_id: gira.id,
+            gira_titulo: gira.titulo,
+            gira_data: gira.data_gira,
+            gira_escala_id: escala.id,
+            entidade_nome: entObj ? entObj.nome : 'Atendimento',
+            codigo_senha: cod,
+            numero_senha: num,
+            nome_consulente: nome,
+            telefone_consulente: atendimento.telefone_consulente,
+            criado_em: now,
+          });
+          setFlash('ok', 'Senha #' + cod + ' emitida com sucesso! Guarde esta tela.');
+          navigate('#/senha');
+        }
+
+        async function emitirSenhaManual(escalaId, nomeRaw, telRaw) {
+          var nome = String(nomeRaw || '').trim();
+          var telDigits = onlyDigits(telRaw);
+          if (nome.length < 2) {
+            setFlash('err', 'Informe o nome do consulente.');
+            return render();
+          }
+
+          if (isSupabaseActive()) {
+            try {
+              var cfg = getSupabaseConfig();
+              await sbFetch('/rest/v1/rpc/gerar_senha_consulente', {
+                method: 'POST',
+                headers: sbHeaders(cfg, true),
+                body: JSON.stringify({
+                  p_gira_escala_id: escalaId,
+                  p_nome_consulente: nome,
+                  p_telefone_consulente: telDigits ? formatPhone(telDigits) : null,
+                  p_origem: 'MANUAL',
+                }),
+              });
+              state.manualModalOpen = false;
+              setFlash('ok', 'Atendimento manual registrado!');
+              await syncSupabaseState(true);
+            } catch (err) {
+              setFlash('err', err.message);
+              render();
+            }
+            return;
+          }
+
+          var db = getLocalDb();
+          var gira = getGiraAberta(db);
+          if (!gira) {
+            setFlash('err', 'Não é possível registrar sem uma gira aberta pelo Administrador.');
+            return render();
+          }
+          var escala = db.gira_escalas.find(function (e) {
+            return e.id === escalaId && e.gira_id === gira.id;
+          });
+          if (!escala) {
+            setFlash('err', 'Escala não encontrada.');
+            return render();
+          }
+          if (escala.senhas_emitidas >= escala.limite_senhas) {
+            setFlash('err', 'Limite de senhas atingido para esta entidade.');
+            return render();
+          }
+          escala.senhas_emitidas += 1;
+          var num = escala.senhas_emitidas;
+          var cod = padSenha(num);
+          db.atendimentos.push({
+            id: uid(),
+            gira_id: gira.id,
+            gira_escala_id: escala.id,
+            numero_senha: num,
+            codigo_senha: cod,
+            nome_consulente: nome,
+            telefone_consulente: telDigits ? formatPhone(telDigits) : null,
+            origem: 'MANUAL',
+            status: 'AGUARDANDO',
+            criado_em: new Date().toISOString(),
+            chamado_em: null,
+            finalizado_em: null,
+          });
+          saveLocalDb(db);
+          state.manualModalOpen = false;
+          setFlash('ok', 'Senha manual #' + cod + ' registrada!');
+          render();
+        }
+
+        async function chamarAtendimento(atendimentoId) {
+          if (isSupabaseActive()) {
+            try {
+              var cfg = getSupabaseConfig();
+              await sbFetch('/rest/v1/atendimentos?id=eq.' + atendimentoId, {
+                method: 'PATCH',
+                headers: sbHeaders(cfg, true),
+                body: JSON.stringify({
+                  status: 'EM_ATENDIMENTO',
+                  chamado_em: new Date().toISOString(),
+                }),
+              });
+              await syncSupabaseState(true);
+            } catch (err) {
+              setFlash('err', err.message);
+              render();
+            }
+            return;
+          }
+
+          var db = getLocalDb();
+          var item = db.atendimentos.find(function (a) {
+            return a.id === atendimentoId;
+          });
+          if (!item) return;
+          item.status = 'EM_ATENDIMENTO';
+          item.chamado_em = new Date().toISOString();
+          var escItem = db.gira_escalas.find(function (e) {
+            return e.id === item.gira_escala_id;
+          });
+          var ent = db.entidades.find(function (e) {
+            return escItem && e.id === escItem.entidade_id;
+          });
+          saveLocalDb(db);
+          if (state.soundEnabled) playChime();
+          speakCall(
+            'Senha ' +
+              Number(item.numero_senha) +
+              ', ' +
+              item.nome_consulente +
+              ', para ' +
+              (ent ? ent.nome : 'atendimento')
+          );
+          render();
+        }
+
+        async function finalizarAtendimento(atendimentoId) {
+          if (isSupabaseActive()) {
+            try {
+              var cfg = getSupabaseConfig();
+              await sbFetch('/rest/v1/atendimentos?id=eq.' + atendimentoId, {
+                method: 'PATCH',
+                headers: sbHeaders(cfg, true),
+                body: JSON.stringify({
+                  status: 'ATENDIDO',
+                  finalizado_em: new Date().toISOString(),
+                }),
+              });
+              await syncSupabaseState(true);
+            } catch (err) {
+              setFlash('err', err.message);
+              render();
+            }
+            return;
+          }
+
+          var db = getLocalDb();
+          var item = db.atendimentos.find(function (a) {
+            return a.id === atendimentoId;
+          });
+          if (!item) return;
+          item.status = 'ATENDIDO';
+          item.finalizado_em = new Date().toISOString();
+          saveLocalDb(db);
+          render();
+        }
+
+        async function confirmarAusencia(atendimentoId, liberarVaga) {
+          if (isSupabaseActive()) {
+            try {
+              var cfg = getSupabaseConfig();
+              await sbFetch('/rest/v1/rpc/marcar_ausente_atendimento', {
+                method: 'POST',
+                headers: sbHeaders(cfg, true),
+                body: JSON.stringify({
+                  p_atendimento_id: atendimentoId,
+                  p_liberar_vaga: Boolean(liberarVaga),
+                }),
+              });
+              state.ausenteTargetId = null;
+              setFlash(
+                'ok',
+                liberarVaga
+                  ? 'Ausência registrada e +1 vaga liberada no check-in público.'
+                  : 'Ausência registrada com vaga bloqueada.'
+              );
+              await syncSupabaseState(true);
+            } catch (err) {
+              setFlash('err', err.message);
+              render();
+            }
+            return;
+          }
+
+          var db = getLocalDb();
+          var item = db.atendimentos.find(function (a) {
+            return a.id === atendimentoId;
+          });
+          if (!item) return;
+          item.status = 'AUSENTE';
+          item.finalizado_em = new Date().toISOString();
+          if (liberarVaga) {
+            var escItem = db.gira_escalas.find(function (e) {
+              return e.id === item.gira_escala_id;
+            });
+            if (escItem) escItem.limite_senhas += 1;
+          }
+          saveLocalDb(db);
+          state.ausenteTargetId = null;
+          setFlash(
+            'ok',
+            liberarVaga
+              ? 'Ausência registrada e +1 vaga liberada no check-in público.'
+              : 'Ausência registrada com vaga bloqueada.'
+          );
+          render();
+        }
+
+        async function abrirNovaGira(titulo, dataGira, observacao, escalasRows) {
+          var cleanRows = escalasRows.filter(function (r) {
+            return r.entidade_id && r.medium_id && r.cambono_id && Number(r.limite_senhas) > 0;
+          });
+          if (!String(titulo || '').trim()) {
+            setFlash('err', 'Informe o título da gira.');
+            return render();
+          }
+          if (cleanRows.length === 0) {
+            setFlash('err', 'Adicione pelo menos 1 entidade válida na escala.');
+            return render();
+          }
+          var seenEnt = {};
+          for (var i = 0; i < cleanRows.length; i++) {
+            if (seenEnt[cleanRows[i].entidade_id]) {
+              setFlash('err', 'Não repita a mesma entidade duas vezes na mesma gira.');
+              return render();
+            }
+            seenEnt[cleanRows[i].entidade_id] = true;
+          }
+
+          if (isSupabaseActive()) {
+            try {
+              var cfg = getSupabaseConfig();
+              var giraRes = await sbFetch('/rest/v1/giras', {
+                method: 'POST',
+                headers: sbHeaders(cfg, true),
+                body: JSON.stringify({
+                  titulo: titulo.trim(),
+                  data_gira: dataGira || todayIso(),
+                  observacao: observacao ? observacao.trim() : null,
+                  status: 'ABERTA',
+                }),
+              });
+              var novaGira = Array.isArray(giraRes) ? giraRes[0] : giraRes;
+              var payloadEscalas = cleanRows.map(function (r) {
+                return {
+                  gira_id: novaGira.id,
+                  entidade_id: r.entidade_id,
+                  medium_id: r.medium_id,
+                  cambono_id: r.cambono_id,
+                  limite_senhas: Number(r.limite_senhas),
+                  senhas_emitidas: 0,
+                  pausada: false,
+                };
+              });
+              await sbFetch('/rest/v1/gira_escalas', {
+                method: 'POST',
+                headers: sbHeaders(cfg, true),
+                body: JSON.stringify(payloadEscalas),
+              });
+              state.draftEscalas = [];
+              setFlash('ok', 'Gira aberta e check-in público liberado!');
+              await syncSupabaseState(true);
+            } catch (err) {
+              setFlash('err', err.message);
+              render();
+            }
+            return;
+          }
+
+          var db = getLocalDb();
+          if (getGiraAberta(db)) {
+            setFlash('err', 'Já existe uma gira aberta. Encerre a atual antes de abrir outra.');
+            return render();
+          }
+          var giraId = uid();
+          var now = new Date().toISOString();
+          db.giras.unshift({
+            id: giraId,
+            titulo: titulo.trim(),
+            data_gira: dataGira || todayIso(),
+            observacao: observacao ? observacao.trim() : '',
+            status: 'ABERTA',
+            criado_em: now,
+            encerrada_em: null,
+          });
+          cleanRows.forEach(function (r) {
+            db.gira_escalas.push({
+              id: uid(),
+              gira_id: giraId,
+              entidade_id: r.entidade_id,
+              medium_id: r.medium_id,
+              cambono_id: r.cambono_id,
+              limite_senhas: Number(r.limite_senhas),
+              senhas_emitidas: 0,
+              pausada: false,
+              criado_em: now,
+            });
+          });
+          saveLocalDb(db);
+          state.draftEscalas = [];
+          setFlash('ok', 'Gira aberta com sucesso! Check-in e QR Code liberados.');
+          render();
+        }
+
+        async function ajustarLimiteEscala(escalaId, delta) {
+          if (isSupabaseActive()) {
+            try {
+              var db = getActiveDb();
+              var cur = db.gira_escalas.find(function (e) {
+                return e.id === escalaId;
+              });
+              if (!cur) return;
+              var novo = Math.max(cur.senhas_emitidas, cur.limite_senhas + delta);
+              var cfg = getSupabaseConfig();
+              await sbFetch('/rest/v1/gira_escalas?id=eq.' + escalaId, {
+                method: 'PATCH',
+                headers: sbHeaders(cfg, true),
+                body: JSON.stringify({ limite_senhas: novo }),
+              });
+              await syncSupabaseState(true);
+            } catch (err) {
+              setFlash('err', err.message);
+              render();
+            }
+            return;
+          }
+          var ldb = getLocalDb();
+          var item = ldb.gira_escalas.find(function (e) {
+            return e.id === escalaId;
+          });
+          if (!item) return;
+          item.limite_senhas = Math.max(item.senhas_emitidas, item.limite_senhas + delta);
+          saveLocalDb(ldb);
+          render();
+        }
+
+        async function togglePausaEscala(escalaId) {
+          if (isSupabaseActive()) {
+            try {
+              var db = getActiveDb();
+              var cur = db.gira_escalas.find(function (e) {
+                return e.id === escalaId;
+              });
+              if (!cur) return;
+              var cfg = getSupabaseConfig();
+              await sbFetch('/rest/v1/gira_escalas?id=eq.' + escalaId, {
+                method: 'PATCH',
+                headers: sbHeaders(cfg, true),
+                body: JSON.stringify({ pausada: !cur.pausada }),
+              });
+              await syncSupabaseState(true);
+            } catch (err) {
+              setFlash('err', err.message);
+              render();
+            }
+            return;
+          }
+          var ldb = getLocalDb();
+          var item = ldb.gira_escalas.find(function (e) {
+            return e.id === escalaId;
+          });
+          if (!item) return;
+          item.pausada = !item.pausada;
+          saveLocalDb(ldb);
+          render();
+        }
+
+        async function excluirEscalaDaGira(escalaId) {
+          var dbCur = getActiveDb();
+          var escCur = dbCur.gira_escalas.find(function (e) {
+            return e.id === escalaId;
+          });
+          if (!escCur) return;
+          var entCur = dbCur.entidades.find(function (e) {
+            return e.id === escCur.entidade_id;
+          });
+          var nomeEnt = entCur ? entCur.nome : 'esta entidade';
+          var avisoSenhas =
+            Number(escCur.senhas_emitidas) > 0
+              ? ' ATENÇÃO: já existem ' +
+                escCur.senhas_emitidas +
+                ' senha(s) emitida(s) que também serão removidas desta gira.'
+              : '';
+          if (
+            !window.confirm(
+              'Confirma excluir "' + nomeEnt + '" do Controle de Vagas desta gira?' + avisoSenhas
+            )
+          ) {
+            return;
+          }
+
+          if (isSupabaseActive()) {
+            try {
+              var cfg = getSupabaseConfig();
+              await sbFetch('/rest/v1/gira_escalas?id=eq.' + escalaId, {
+                method: 'DELETE',
+                headers: sbHeaders(cfg, true),
+              });
+              setFlash('ok', 'Entidade removida da gira.');
+              await syncSupabaseState(true);
+            } catch (err) {
+              setFlash('err', err.message);
+              render();
+            }
+            return;
+          }
+
+          var ldb = getLocalDb();
+          ldb.gira_escalas = ldb.gira_escalas.filter(function (e) {
+            return e.id !== escalaId;
+          });
+          ldb.atendimentos = ldb.atendimentos.filter(function (a) {
+            return a.gira_escala_id !== escalaId;
+          });
+          saveLocalDb(ldb);
+          setFlash('ok', 'Entidade removida da gira.');
+          render();
+        }
+
+        async function adicionarEscalaEmGiraAberta(entId, medId, camId, lim) {
+          var limite = Math.max(1, Number(lim) || 10);
+          var db = getActiveDb();
+          var gira = getGiraAberta(db);
+          if (!gira) return;
+          var exists = db.gira_escalas.some(function (e) {
+            return e.gira_id === gira.id && e.entidade_id === entId;
+          });
+          if (exists) {
+            setFlash('err', 'Esta entidade já está na escala da gira atual.');
+            return render();
+          }
+
+          if (isSupabaseActive()) {
+            try {
+              var cfg = getSupabaseConfig();
+              await sbFetch('/rest/v1/gira_escalas', {
+                method: 'POST',
+                headers: sbHeaders(cfg, true),
+                body: JSON.stringify({
+                  gira_id: gira.id,
+                  entidade_id: entId,
+                  medium_id: medId,
+                  cambono_id: camId,
+                  limite_senhas: limite,
+                  senhas_emitidas: 0,
+                  pausada: false,
+                }),
+              });
+              setFlash('ok', 'Entidade adicionada à gira aberta!');
+              await syncSupabaseState(true);
+            } catch (err) {
+              setFlash('err', err.message);
+              render();
+            }
+            return;
+          }
+
+          var ldb = getLocalDb();
+          ldb.gira_escalas.push({
+            id: uid(),
+            gira_id: gira.id,
+            entidade_id: entId,
+            medium_id: medId,
+            cambono_id: camId,
+            limite_senhas: limite,
+            senhas_emitidas: 0,
+            pausada: false,
+            criado_em: new Date().toISOString(),
+          });
+          saveLocalDb(ldb);
+          setFlash('ok', 'Entidade adicionada à gira aberta!');
+          render();
+        }
+
+        async function encerrarGiraAtual() {
+          if (
+            !window.confirm(
+              'Confirma o encerramento da gira atual? Todas as senhas ainda aguardando serão marcadas como "Não Atendido".'
+            )
+          ) {
+            return;
+          }
+          var db = getActiveDb();
+          var gira = getGiraAberta(db);
+          if (!gira) return;
+
+          if (isSupabaseActive()) {
+            try {
+              var cfg = getSupabaseConfig();
+              await sbFetch('/rest/v1/rpc/encerrar_gira', {
+                method: 'POST',
+                headers: sbHeaders(cfg, true),
+                body: JSON.stringify({ p_gira_id: gira.id }),
+              });
+              setFlash('ok', 'Gira encerrada com sucesso!');
+              await syncSupabaseState(true);
+            } catch (err) {
+              setFlash('err', err.message);
+              render();
+            }
+            return;
+          }
+
+          var ldb = getLocalDb();
+          var g = ldb.giras.find(function (x) {
+            return x.id === gira.id;
+          });
+          if (!g) return;
+          var now = new Date().toISOString();
+          g.status = 'ENCERRADA';
+          g.encerrada_em = now;
+          ldb.atendimentos.forEach(function (a) {
+            if (a.gira_id === g.id && a.status === 'AGUARDANDO') {
+              a.status = 'NAO_ATENDIDO';
+              a.finalizado_em = now;
+            }
+          });
+          saveLocalDb(ldb);
+          setFlash('ok', 'Gira encerrada! Novos registros foram bloqueados.');
+          render();
+        }
+
+        // ============================================================
+        // EXPORTAÇÕES (EXCEL .XLS nativo + CSV UTF-8 BOM - ZERO CDN)
+        // ============================================================
+        function getFilteredReportRows(db) {
+          var f = state.reportFilters;
+          var gMap = {};
+          var esMap = {};
+          var entMap = {};
+          var eqMap = {};
+          db.giras.forEach(function (g) {
+            gMap[g.id] = g;
+          });
+          db.gira_escalas.forEach(function (es) {
+            esMap[es.id] = es;
+          });
+          db.entidades.forEach(function (e) {
+            entMap[e.id] = e;
+          });
+          db.equipe_espiritual.forEach(function (m) {
+            eqMap[m.id] = m;
+          });
+
+          return db.atendimentos
+            .map(function (a) {
+              var g = gMap[a.gira_id] || {};
+              var es = esMap[a.gira_escala_id] || {};
+              var ent = entMap[es.entidade_id] || {};
+              var med = eqMap[es.medium_id] || {};
+              var cam = eqMap[es.cambono_id] || {};
+              return Object.assign({}, a, {
+                gira_titulo: g.titulo || '-',
+                gira_data: g.data_gira || '',
+                entidade_id: es.entidade_id || '',
+                entidade_nome: ent.nome || '-',
+                medium_nome: med.nome || '-',
+                cambono_nome: cam.nome || '-',
+              });
+            })
+            .filter(function (r) {
+              if (f.gira_id !== 'ALL' && r.gira_id !== f.gira_id) return false;
+              if (f.entidade_id !== 'ALL' && r.entidade_id !== f.entidade_id) return false;
+              if (f.status !== 'ALL' && r.status !== f.status) return false;
+              if (f.busca && f.busca.trim()) {
+                var q = f.busca.trim().toLowerCase();
+                var hay = (
+                  r.nome_consulente +
+                  ' ' +
+                  (r.telefone_consulente || '') +
+                  ' ' +
+                  r.codigo_senha +
+                  ' ' +
+                  r.entidade_nome
+                ).toLowerCase();
+                if (hay.indexOf(q) === -1) return false;
+              }
+              return true;
+            })
+            .sort(function (a, b) {
+              return new Date(b.criado_em).getTime() - new Date(a.criado_em).getTime();
+            });
+        }
+
+        function exportReportExcel(rows) {
+          var total = rows.length;
+          var atendidos = rows.filter(function (r) {
+            return r.status === 'ATENDIDO';
+          }).length;
+          var ausentes = rows.filter(function (r) {
+            return r.status === 'AUSENTE';
+          }).length;
+          var naoAt = rows.filter(function (r) {
+            return r.status === 'NAO_ATENDIDO';
+          }).length;
+
+          var html =
+            '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">' +
+            '<head><meta charset="UTF-8"></head><body>' +
+            '<h2>' +
+            esc(TERREIRO_NOME) +
+            ' — ' +
+            esc(TERREIRO_SUB) +
+            '</h2>' +
+            '<p>Relatório gerado em: ' +
+            esc(new Date().toLocaleString('pt-BR')) +
+            '</p>' +
+            '<table border="1"><tr><th>Total</th><th>Atendidos</th><th>Ausentes</th><th>Não Atendidos</th></tr>' +
+            '<tr><td>' +
+            total +
+            '</td><td>' +
+            atendidos +
+            '</td><td>' +
+            ausentes +
+            '</td><td>' +
+            naoAt +
+            '</td></tr></table><br/>' +
+            '<table border="1"><thead><tr>' +
+            '<th>Data Gira</th><th>Gira</th><th>Senha</th><th>Consulente</th><th>Telefone</th><th>Entidade</th><th>Médium</th><th>Cambono</th><th>Origem</th><th>Status</th><th>Emissão</th><th>Chamado</th><th>Finalizado</th>' +
+            '</tr></thead><tbody>' +
+            rows
+              .map(function (r) {
+                return (
+                  '<tr>' +
+                  '<td>' +
+                  esc(formatDateBr(r.gira_data)) +
+                  '</td>' +
+                  '<td>' +
+                  esc(r.gira_titulo) +
+                  '</td>' +
+                  '<td>#' +
+                  esc(r.codigo_senha) +
+                  '</td>' +
+                  '<td>' +
+                  esc(r.nome_consulente) +
+                  '</td>' +
+                  '<td>' +
+                  esc(r.telefone_consulente || '-') +
+                  '</td>' +
+                  '<td>' +
+                  esc(r.entidade_nome) +
+                  '</td>' +
+                  '<td>' +
+                  esc(r.medium_nome) +
+                  '</td>' +
+                  '<td>' +
+                  esc(r.cambono_nome) +
+                  '</td>' +
+                  '<td>' +
+                  esc(r.origem) +
+                  '</td>' +
+                  '<td>' +
+                  esc(STATUS_LABEL[r.status] || r.status) +
+                  '</td>' +
+                  '<td>' +
+                  esc(formatDateTimeBr(r.criado_em)) +
+                  '</td>' +
+                  '<td>' +
+                  esc(formatDateTimeBr(r.chamado_em)) +
+                  '</td>' +
+                  '<td>' +
+                  esc(formatDateTimeBr(r.finalizado_em)) +
+                  '</td>' +
+                  '</tr>'
+                );
+              })
+              .join('') +
+            '</tbody></table></body></html>';
+
+          var blob = new Blob(['\ufeff' + html], {
+            type: 'application/vnd.ms-excel;charset=utf-8',
+          });
+          triggerDownload(blob, 'relatorio-atendimentos-' + todayIso() + '.xls');
+        }
+
+        function exportReportCsv(rows) {
+          var sep = ';';
+          var header = [
+            'Data Gira',
+            'Gira',
+            'Senha',
+            'Consulente',
+            'Telefone',
+            'Entidade',
+            'Medium',
+            'Cambono',
+            'Origem',
+            'Status',
+            'Emissao',
+            'Chamado',
+            'Finalizado',
+          ].join(sep);
+
+          function csvCell(v) {
+            var s = String(v === null || v === undefined ? '' : v).replace(/"/g, '""');
+            return '"' + s + '"';
+          }
+
+          var lines = rows.map(function (r) {
+            return [
+              formatDateBr(r.gira_data),
+              r.gira_titulo,
+              '#' + r.codigo_senha,
+              r.nome_consulente,
+              r.telefone_consulente || '',
+              r.entidade_nome,
+              r.medium_nome,
+              r.cambono_nome,
+              r.origem,
+              STATUS_LABEL[r.status] || r.status,
+              formatDateTimeBr(r.criado_em),
+              formatDateTimeBr(r.chamado_em),
+              formatDateTimeBr(r.finalizado_em),
+            ]
+              .map(csvCell)
+              .join(sep);
+          });
+          var csv = '\ufeff' + [header].concat(lines).join('\r\n');
+          var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+          triggerDownload(blob, 'relatorio-atendimentos-' + todayIso() + '.csv');
+        }
+
+        function triggerDownload(blob, filename) {
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(function () {
+            URL.revokeObjectURL(url);
+          }, 1500);
+        }
+
+        function downloadQrPng(urlText, fileTitle) {
+          var svgStr = renderQrSvg(urlText, 640);
+          var img = new Image();
+          var svgBlob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+          var url = URL.createObjectURL(svgBlob);
+          img.onload = function () {
+            var canvas = document.createElement('canvas');
+            canvas.width = 640;
+            canvas.height = 640;
+            var ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, 640, 640);
+            ctx.drawImage(img, 0, 0, 640, 640);
+            URL.revokeObjectURL(url);
+            canvas.toBlob(function (pngBlob) {
+              if (pngBlob) triggerDownload(pngBlob, fileTitle || 'qrcode-recepcao-iforiti.png');
+            }, 'image/png');
+          };
+          img.src = url;
+        }
+
+        // ============================================================
+        // ROTEAMENTO HASH (#/)
+        // ============================================================
+        function getRouteFromHash() {
+          var h = window.location.hash || '#/';
+          var r = h.replace(/^#/, '');
+          if (!r || r[0] !== '/') r = '/' + r;
+          return r;
+        }
+
+        function navigate(hashRoute) {
+          var clean = hashRoute.indexOf('#') === 0 ? hashRoute : '#' + hashRoute;
+          state.route = clean.slice(1);
+          if (window.location.hash !== clean) {
+            window.location.hash = clean;
+          } else {
+            render();
+          }
+        }
+
+        window.addEventListener('hashchange', function () {
+          state.route = getRouteFromHash();
+          render();
+        });
+
+        window.addEventListener('storage', function (ev) {
+          if (ev.key === LOCAL_DB_KEY || ev.key === COMP_LIST_KEY) {
+            render();
+          }
+        });
+
+        // ============================================================
+        // RENDERIZAÇÃO DAS TELAS
+        // ============================================================
+        function renderTopbar(auth) {
+          var online = isSupabaseActive();
+          var modeLabel = online ? 'Online (Supabase)' : 'Modo Local (Offline)';
+          var actions = '';
+          if (state.deferredPrompt) {
+            actions +=
+              '<button class="btn btn-sm btn-gold" id="btn-install-pwa">Instalar App (PWA)</button>';
+          }
+          if (state.route !== '/') {
+            actions +=
+              '<button class="btn btn-sm btn-ghost-light" data-nav="#/">Check-in</button>';
+          }
+          if (getComprovantes().length > 0 && state.route !== '/senha') {
+            actions +=
+              '<button class="btn btn-sm btn-ghost-light" data-nav="#/senha">Minha Senha</button>';
+          }
+          if (auth) {
+            if (state.route !== '/painel') {
+              actions +=
+                '<button class="btn btn-sm btn-ghost-light" data-nav="#/painel">Painel Cambono</button>';
+            }
+            if (auth.papel === 'ADMIN' && state.route.indexOf('/admin') !== 0) {
+              actions +=
+                '<button class="btn btn-sm btn-gold" data-nav="#/admin/gira">Admin</button>';
+            }
+            actions +=
+              '<button class="btn btn-sm btn-ghost-light" id="btn-logout">Sair (' +
+              esc(auth.nome.split(' ')[0]) +
+              ')</button>';
+          } else if (state.route !== '/login') {
+            actions +=
+              '<button class="btn btn-sm btn-ghost-light" data-nav="#/login">Área da Equipe</button>';
+          }
+
+          return (
+            '<header class="topbar no-print">' +
+            '<div class="topbar-inner">' +
+            '<div class="brand" data-nav="#/">' +
+            '<img src="' +
+            LOGO_PATH +
+            '" alt="Logo ' +
+            esc(TERREIRO_NOME) +
+            '" class="brand-logo" onerror="this.style.display=\'none\'" />' +
+            '<div>' +
+            '<div class="brand-title">' +
+            esc(TERREIRO_NOME) +
+            '</div>' +
+            '<div class="brand-sub">' +
+            esc(TERREIRO_SUB) +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+            '<div class="topbar-actions">' +
+            '<span class="mode-pill">' +
+            esc(modeLabel) +
+            '</span>' +
+            actions +
+            '</div>' +
+            '</div>' +
+            '</header>'
+          );
+        }
+
+        function renderFlash() {
+          if (!state.flash) return '';
+          var cls =
+            state.flash.type === 'err'
+              ? 'alert-err'
+              : state.flash.type === 'warn'
+              ? 'alert-warn'
+              : 'alert-ok';
+          return (
+            '<div class="alert ' +
+            cls +
+            ' row-flex">' +
+            '<span>' +
+            esc(state.flash.text) +
+            '</span>' +
+            '<button class="btn btn-sm btn-outline" id="btn-close-flash">Fechar</button>' +
+            '</div>'
+          );
+        }
+
+        function renderCheckin(db) {
+          var gira = getGiraAberta(db);
+          var comps = getComprovantes();
+
+          if (!gira) {
+            return (
+              '<div class="container container-narrow">' +
+              renderFlash() +
+              '<div class="card" style="text-align:center; padding:32px 20px;">' +
+              '<img src="' +
+              LOGO_PATH +
+              '" alt="Logo Terreiro" style="width:112px;height:112px;border-radius:999px;border:3px solid #0f5132;object-fit:cover;margin-bottom:12px;" onerror="this.style.display=\'none\'" />' +
+              '<h1 style="margin:0 0 6px; font-size:1.35rem; color:var(--primary);">' +
+              esc(TERREIRO_NOME) +
+              '</h1>' +
+              '<p class="muted" style="margin:0 0 18px;">' +
+              esc(TERREIRO_SUB) +
+              '</p>' +
+              '<div class="alert alert-warn" style="text-align:left;">' +
+              '<strong>Nenhuma gira aberta no momento.</strong><br/>' +
+              'Conforme norma da casa, os registros de consulentes e a emissão de senhas só são liberados após a abertura oficial da gira pelo Administrador.' +
+              '</div>' +
+              '<div style="display:flex; flex-direction:column; gap:10px; margin-top:16px;">' +
+              '<button class="btn btn-primary btn-lg" data-nav="#/login">Entrar como Administrador ou Cambono</button>' +
+              (comps.length > 0
+                ? '<button class="btn btn-outline btn-lg" data-nav="#/senha">Ver Meus Comprovantes Salvos (' +
+                  comps.length +
+                  ')</button>'
+                : '') +
+              '</div>' +
+              '</div>' +
+              '</div>'
+            );
+          }
+
+          var escalas = getEscalasComVagas(db, gira.id);
+          var selected = escalas.find(function (e) {
+            return e.id === state.selectedEscalaId;
+          });
+
+          var cardsHtml = escalas
+            .map(function (es) {
+              var disabled = es.pausada || es.disponiveis <= 0;
+              var badge = es.pausada
+                ? '<span class="badge badge-gold">PAUSADO</span>'
+                : es.disponiveis <= 0
+                ? '<span class="badge badge-red">ESGOTADO</span>'
+                : '<span class="badge badge-green">Restam ' + es.disponiveis + '</span>';
+              var selCls = state.selectedEscalaId === es.id ? ' selected' : '';
+              return (
+                '<button type="button" class="entity-option' +
+                selCls +
+                '" data-select-escala="' +
+                esc(es.id) +
+                '" ' +
+                (disabled ? 'disabled' : '') +
+                '>' +
+                '<div class="row-flex" style="margin-bottom:4px;">' +
+                '<strong style="font-size:1.05rem; color:var(--primary);">' +
+                esc(es.entidade_nome) +
+                '</strong>' +
+                badge +
+                '</div>' +
+                (es.entidade_descricao
+                  ? '<div class="muted" style="font-size:0.82rem; margin-bottom:4px;">' +
+                    esc(es.entidade_descricao) +
+                    '</div>'
+                  : '') +
+                '<div style="font-size:0.78rem; color:var(--muted);">Médium: <strong>' +
+                esc(es.medium_nome) +
+                '</strong> • Total emitidas: ' +
+                es.senhas_emitidas +
+                '/' +
+                es.limite_senhas +
+                '</div>' +
+                '</button>'
+              );
+            })
+            .join('');
+
+          return (
+            '<div class="container container-narrow">' +
+            renderFlash() +
+            '<div class="card">' +
+            '<div class="row-flex">' +
+            '<div>' +
+            '<span class="badge badge-green">GIRA ABERTA</span>' +
+            '<h1 style="margin:6px 0 2px; font-size:1.3rem;">' +
+            esc(gira.titulo) +
+            '</h1>' +
+            '<div class="muted">Data: ' +
+            esc(formatDateBr(gira.data_gira)) +
+            (gira.observacao ? ' • ' + esc(gira.observacao) : '') +
+            '</div>' +
+            '</div>' +
+            (comps.length > 0
+              ? '<button class="btn btn-sm btn-outline" data-nav="#/senha">Minha Senha</button>'
+              : '') +
+            '</div>' +
+            '</div>' +
+            '<div class="card">' +
+            '<h2 style="margin:0 0 10px; font-size:1.05rem;">1. Escolha a Entidade para Atendimento</h2>' +
+            '<div style="display:flex; flex-direction:column; gap:10px;">' +
+            (cardsHtml || '<p class="muted">Nenhuma entidade escalada nesta gira.</p>') +
+            '</div>' +
+            '</div>' +
+            (selected
+              ? '<div class="card" id="checkin-form-card">' +
+                '<h2 style="margin:0 0 4px; font-size:1.05rem;">2. Seus Dados — ' +
+                esc(selected.entidade_nome) +
+                '</h2>' +
+                '<p class="muted" style="margin:0 0 14px;">Preencha nome completo e WhatsApp/Telefone para gerar sua senha.</p>' +
+                '<form id="form-checkin">' +
+                '<div class="field">' +
+                '<label class="label" for="inp-nome">Nome Completo *</label>' +
+                '<input id="inp-nome" class="input" type="text" required minlength="3" placeholder="Ex.: Maria Aparecida Silva" />' +
+                '</div>' +
+                '<div class="field">' +
+                '<label class="label" for="inp-tel">Telefone / WhatsApp com DDD *</label>' +
+                '<input id="inp-tel" class="input" type="tel" required placeholder="(11) 99999-9999" maxlength="15" />' +
+                '</div>' +
+                '<button type="submit" class="btn btn-primary btn-lg">Confirmar e Gerar Senha</button>' +
+                '</form>' +
+                '</div>'
+              : '') +
+            '</div>'
+          );
+        }
+
+        function renderSenha(db) {
+          var comps = getComprovantes();
+          var activeId = getActiveComprovanteId();
+          var comp =
+            comps.find(function (c) {
+              return c.atendimento_id === activeId;
+            }) || comps[0];
+
+          if (!comp) {
+            return (
+              '<div class="container container-narrow">' +
+              renderFlash() +
+              '<div class="card" style="text-align:center; padding:28px;">' +
+              '<h2>Nenhuma senha salva neste dispositivo</h2>' +
+              '<p class="muted">Faça seu check-in quando a gira estiver aberta para emitir seu comprovante.</p>' +
+              '<button class="btn btn-primary" data-nav="#/">Ir para o Check-in</button>' +
+              '</div>' +
+              '</div>'
+            );
+          }
+
+          var liveAtend = db.atendimentos.find(function (a) {
+            return a.id === comp.atendimento_id;
+          });
+          var status = liveAtend ? liveAtend.status : 'AGUARDANDO';
+          var ahead = 0;
+          if (status === 'AGUARDANDO') {
+            ahead = db.atendimentos.filter(function (a) {
+              return (
+                a.gira_escala_id === comp.gira_escala_id &&
+                a.status === 'AGUARDANDO' &&
+                a.numero_senha < comp.numero_senha
+              );
+            }).length;
+          }
+
+          if (status === 'EM_ATENDIMENTO' && state.lastAlertedCalledId !== comp.atendimento_id) {
+            state.lastAlertedCalledId = comp.atendimento_id;
+            setTimeout(function () {
+              if (state.soundEnabled) playChime();
+              try {
+                if (navigator.vibrate) navigator.vibrate([220, 100, 220, 100, 320]);
+              } catch (e) {}
+            }, 60);
+          }
+
+          var switchHtml = '';
+          if (comps.length > 1) {
+            switchHtml =
+              '<div class="card card-muted"><div class="label">Comprovantes salvos neste aparelho:</div><div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+              comps
+                .map(function (c) {
+                  var cls =
+                    c.atendimento_id === comp.atendimento_id ? 'btn-primary' : 'btn-outline';
+                  return (
+                    '<button class="btn btn-sm ' +
+                    cls +
+                    '" data-pick-comp="' +
+                    esc(c.atendimento_id) +
+                    '">#' +
+                    esc(c.codigo_senha) +
+                    ' • ' +
+                    esc(c.entidade_nome) +
+                    '</button>'
+                  );
+                })
+                .join('') +
+              '</div></div>';
+          }
+
+          return (
+            '<div class="container container-narrow">' +
+            renderFlash() +
+            switchHtml +
+            (status === 'EM_ATENDIMENTO'
+              ? '<div class="alert alert-call" style="text-align:center;">' +
+                '<strong style="font-size:1.1rem;">É A SUA VEZ!</strong><br/>' +
+                'Dirija-se agora ao atendimento de <strong>' +
+                esc(comp.entidade_nome) +
+                '</strong>.' +
+                '</div>'
+              : '') +
+            '<div class="card ticket-hero">' +
+            '<img src="' +
+            LOGO_PATH +
+            '" alt="Logo Terreiro" style="width:68px;height:68px;border-radius:999px;border:2px solid #0f5132;object-fit:cover;" onerror="this.style.display=\'none\'" />' +
+            '<div style="font-weight:800; color:var(--primary); margin-top:4px;">' +
+            esc(TERREIRO_NOME) +
+            '</div>' +
+            '<div class="muted">' +
+            esc(comp.gira_titulo) +
+            ' • ' +
+            esc(formatDateBr(comp.gira_data)) +
+            '</div>' +
+            '<div style="margin-top:12px; font-size:0.85rem; font-weight:700; color:var(--muted);">SUA SENHA</div>' +
+            '<div class="ticket-number">#' +
+            esc(comp.codigo_senha) +
+            '</div>' +
+            '<div style="margin-bottom:10px;"><span class="badge ' +
+            (STATUS_BADGE[status] || 'badge-gray') +
+            '">' +
+            esc(STATUS_LABEL[status] || status) +
+            '</span></div>' +
+            (status === 'AGUARDANDO'
+              ? '<div class="alert alert-ok" style="margin:12px 0;">Posição na fila desta entidade: <strong>' +
+                (ahead === 0
+                  ? 'Você é o próximo!'
+                  : 'Você é o nº ' + (ahead + 1) + ' (' + ahead + ' na sua frente)') +
+                '</strong></div>'
+              : '') +
+            '<div style="text-align:left; border-top:1px solid var(--border); padding-top:12px; margin-top:12px; font-size:0.9rem;">' +
+            '<div><strong>Entidade:</strong> ' +
+            esc(comp.entidade_nome) +
+            '</div>' +
+            '<div><strong>Consulente:</strong> ' +
+            esc(comp.nome_consulente) +
+            '</div>' +
+            '<div><strong>Telefone:</strong> ' +
+            esc(comp.telefone_consulente || '-') +
+            '</div>' +
+            '<div><strong>Emitida em:</strong> ' +
+            esc(formatDateTimeBr(comp.criado_em)) +
+            '</div>' +
+            '</div>' +
+            '<div class="row-flex" style="margin-top:16px;">' +
+            '<button class="btn btn-outline btn-sm" id="btn-toggle-sound">' +
+            (state.soundEnabled ? 'Som de alerta: Ativo' : 'Som de alerta: Mudo') +
+            '</button>' +
+            '<button class="btn btn-primary btn-sm" id="btn-refresh-senha">Atualizar Status</button>' +
+            '<button class="btn btn-outline btn-sm" data-nav="#/">Voltar ao Check-in</button>' +
+            '</div>' +
+            '</div>' +
+            '</div>'
+          );
+        }
+
+        function renderLogin() {
+          var cfg = getSupabaseConfig();
+          return (
+            '<div class="container container-narrow">' +
+            renderFlash() +
+            '<div class="card">' +
+            '<div style="text-align:center; margin-bottom:16px;">' +
+            '<img src="' +
+            LOGO_PATH +
+            '" alt="Logo" style="width:76px;height:76px;border-radius:999px;border:2px solid #0f5132;object-fit:cover;" onerror="this.style.display=\'none\'" />' +
+            '<h1 style="margin:8px 0 2px; font-size:1.25rem;">Acesso da Equipe</h1>' +
+            '<div class="muted">' +
+            esc(TERREIRO_NOME) +
+            ' — ' +
+            esc(TERREIRO_SUB) +
+            '</div>' +
+            '</div>' +
+            '<form id="form-login">' +
+            '<div class="field">' +
+            '<label class="label" for="login-email">E-mail</label>' +
+            '<input id="login-email" class="input" type="email" required placeholder="admin@terreiro.org" />' +
+            '</div>' +
+            '<div class="field">' +
+            '<label class="label" for="login-pass">Senha</label>' +
+            '<input id="login-pass" class="input" type="password" required placeholder="••••••" />' +
+            '</div>' +
+            '<button type="submit" class="btn btn-primary btn-lg">Entrar no Sistema</button>' +
+            '</form>' +
+            '</div>' +
+            '<div class="card card-muted">' +
+            '<h3 style="margin:0 0 6px; font-size:0.98rem;">Modo Online (Supabase Gratuito) vs Modo Local</h3>' +
+            '<p class="muted" style="margin:0 0 10px;">Atualmente: <strong>' +
+            (cfg ? 'Conectado ao Supabase (' + esc(cfg.url) + ')' : 'Modo Local neste computador') +
+            '</strong>. Use o Supabase se vários celulares forem acessar juntos pela internet.</p>' +
+            '<form id="form-supabase-cfg">' +
+            '<div class="grid-2">' +
+            '<div class="field"><label class="label" for="sb-url">URL do Projeto Supabase</label>' +
+            '<input id="sb-url" class="input" type="url" value="' +
+            esc(cfg ? cfg.url : '') +
+            '" placeholder="https://xxxx.supabase.co" /></div>' +
+            '<div class="field"><label class="label" for="sb-key">Anon Public Key</label>' +
+            '<input id="sb-key" class="input" type="text" value="' +
+            esc(cfg ? cfg.anonKey : '') +
+            '" placeholder="eyJ..." /></div>' +
+            '</div>' +
+            '<div class="row-flex">' +
+            '<button type="submit" class="btn btn-primary btn-sm">Salvar Modo Online</button>' +
+            (cfg
+              ? '<button type="button" class="btn btn-danger btn-sm" id="btn-sb-clear">Voltar para Modo Local</button>'
+              : '') +
+            '</div>' +
+            '</form>' +
+            '</div>' +
+            '</div>'
+          );
+        }
+
+        function renderPainel(db, auth) {
+          var gira = getGiraAberta(db);
+          if (!gira) {
+            return (
+              '<div class="container container-narrow">' +
+              renderFlash() +
+              '<div class="card" style="text-align:center; padding:28px;">' +
+              '<h2>Nenhuma gira aberta no momento</h2>' +
+              '<p class="muted">As chamadas e atendimentos manuais só são liberados após o Administrador abrir a gira.</p>' +
+              (auth.papel === 'ADMIN'
+                ? '<button class="btn btn-primary" data-nav="#/admin/gira">Ir para Gestão de Gira e Abrir Gira</button>'
+                : '<button class="btn btn-outline" data-nav="#/">Voltar</button>') +
+              '</div></div>'
+            );
+          }
+
+          var escalas = getEscalasComVagas(db, gira.id);
+          var atendGira = db.atendimentos
+            .filter(function (a) {
+              return a.gira_id === gira.id;
+            })
+            .sort(function (a, b) {
+              return a.numero_senha - b.numero_senha;
+            });
+
+          var escMap = {};
+          escalas.forEach(function (es) {
+            escMap[es.id] = es;
+          });
+
+          var filtered = atendGira.filter(function (a) {
+            if (state.filterEntidadeId === 'ALL') return true;
+            var es = escMap[a.gira_escala_id];
+            return es && es.entidade_id === state.filterEntidadeId;
+          });
+
+          var emAtend = filtered.filter(function (a) {
+            return a.status === 'EM_ATENDIMENTO';
+          });
+          var aguardando = filtered.filter(function (a) {
+            return a.status === 'AGUARDANDO';
+          });
+          var historico = filtered.filter(function (a) {
+            return a.status === 'ATENDIDO' || a.status === 'AUSENTE' || a.status === 'NAO_ATENDIDO';
+          });
+
+          var cAg = filtered.filter(function (a) {
+            return a.status === 'AGUARDANDO';
+          }).length;
+          var cEm = emAtend.length;
+          var cAt = filtered.filter(function (a) {
+            return a.status === 'ATENDIDO';
+          }).length;
+          var cAu = filtered.filter(function (a) {
+            return a.status === 'AUSENTE';
+          }).length;
+
+          var pills =
+            '<button class="btn btn-sm ' +
+            (state.filterEntidadeId === 'ALL' ? 'btn-primary' : 'btn-outline') +
+            '" data-filter-ent="ALL">Todas (' +
+            atendGira.length +
+            ')</button>' +
+            escalas
+              .map(function (es) {
+                var cls =
+                  state.filterEntidadeId === es.entidade_id ? 'btn-primary' : 'btn-outline';
+                return (
+                  '<button class="btn btn-sm ' +
+                  cls +
+                  '" data-filter-ent="' +
+                  esc(es.entidade_id) +
+                  '">' +
+                  esc(es.entidade_nome) +
+                  '</button>'
+                );
+              })
+              .join('');
+
+          function renderQueueItem(a) {
+            var es = escMap[a.gira_escala_id] || {};
+            var btns = '';
+            if (a.status === 'AGUARDANDO') {
+              btns =
+                '<button class="btn btn-sm btn-primary" data-chamar="' +
+                esc(a.id) +
+                '">Chamar / Iniciar</button>' +
+                '<button class="btn btn-sm btn-danger" data-ausente-open="' +
+                esc(a.id) +
+                '">Ausente</button>';
+            } else if (a.status === 'EM_ATENDIMENTO') {
+              btns =
+                '<button class="btn btn-sm btn-primary" data-finalizar="' +
+                esc(a.id) +
+                '">Finalizar</button>' +
+                '<button class="btn btn-sm btn-outline" data-chamar="' +
+                esc(a.id) +
+                '">Rechamar</button>' +
+                '<button class="btn btn-sm btn-danger" data-ausente-open="' +
+                esc(a.id) +
+                '">Ausente</button>';
+            }
+            return (
+              '<div class="card" style="margin-bottom:10px; padding:14px;">' +
+              '<div class="row-flex">' +
+              '<div>' +
+              '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+              '<strong style="font-size:1.25rem; color:var(--primary);">#' +
+              esc(a.codigo_senha) +
+              '</strong>' +
+              '<strong>' +
+              esc(a.nome_consulente) +
+              '</strong>' +
+              '<span class="badge ' +
+              (STATUS_BADGE[a.status] || 'badge-gray') +
+              '">' +
+              esc(STATUS_LABEL[a.status] || a.status) +
+              '</span>' +
+              (a.origem === 'MANUAL'
+                ? '<span class="badge badge-gray">Manual</span>'
+                : '<span class="badge badge-blue">QR</span>') +
+              '</div>' +
+              '<div class="muted" style="margin-top:4px;">' +
+              esc(es.entidade_nome || 'Entidade') +
+              ' • Tel: ' +
+              esc(a.telefone_consulente || 'Sem telefone') +
+              ' • Emitida: ' +
+              esc(formatTimeBr(a.criado_em)) +
+              '</div>' +
+              '</div>' +
+              '<div style="display:flex; gap:6px; flex-wrap:wrap;">' +
+              btns +
+              '</div>' +
+              '</div>' +
+              '</div>'
+            );
+          }
+
+          var ausenteTarget = state.ausenteTargetId
+            ? db.atendimentos.find(function (x) {
+                return x.id === state.ausenteTargetId;
+              })
+            : null;
+
+          return (
+            '<div class="container">' +
+            renderFlash() +
+            '<div class="card">' +
+            '<div class="row-flex">' +
+            '<div>' +
+            '<span class="badge badge-green">GIRA EM ANDAMENTO</span>' +
+            '<h1 style="margin:4px 0 2px; font-size:1.3rem;">Painel do Cambono — ' +
+            esc(gira.titulo) +
+            '</h1>' +
+            '<div class="muted">' +
+            esc(formatDateBr(gira.data_gira)) +
+            '</div>' +
+            '</div>' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+            '<button class="btn btn-sm btn-outline" id="btn-toggle-voice">' +
+            (state.voiceEnabled ? 'Voz: Ativa' : 'Voz: Desligada') +
+            '</button>' +
+            '<button class="btn btn-gold" id="btn-open-manual">+ Atendimento Manual</button>' +
+            '</div>' +
+            '</div>' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">' +
+            pills +
+            '</div>' +
+            '</div>' +
+            '<div class="grid-4" style="margin-bottom:16px;">' +
+            '<div class="stat-box"><div class="stat-val" style="color:var(--gold);">' +
+            cAg +
+            '</div><div class="stat-lbl">Aguardando</div></div>' +
+            '<div class="stat-box"><div class="stat-val" style="color:var(--primary);">' +
+            cEm +
+            '</div><div class="stat-lbl">Em Atendimento</div></div>' +
+            '<div class="stat-box"><div class="stat-val" style="color:var(--info);">' +
+            cAt +
+            '</div><div class="stat-lbl">Atendidos</div></div>' +
+            '<div class="stat-box"><div class="stat-val" style="color:var(--danger);">' +
+            cAu +
+            '</div><div class="stat-lbl">Ausentes</div></div>' +
+            '</div>' +
+            (emAtend.length > 0
+              ? '<h2 style="font-size:1.05rem; margin:8px 0;">Em Atendimento Agora</h2>' +
+                emAtend.map(renderQueueItem).join('')
+              : '') +
+            '<h2 style="font-size:1.05rem; margin:14px 0 8px;">Fila de Espera (' +
+            aguardando.length +
+            ')</h2>' +
+            (aguardando.length > 0
+              ? aguardando.map(renderQueueItem).join('')
+              : '<div class="card card-muted"><p class="muted" style="margin:0;">Nenhuma senha aguardando neste filtro.</p></div>') +
+            '<div class="card card-muted" style="margin-top:16px;">' +
+            '<div class="row-flex" style="cursor:pointer;" id="btn-toggle-history">' +
+            '<strong>Histórico da Gira (Atendidos / Ausentes: ' +
+            historico.length +
+            ')</strong>' +
+            '<span class="btn btn-sm btn-outline">' +
+            (state.showHistory ? 'Recolher' : 'Expandir') +
+            '</span>' +
+            '</div>' +
+            (state.showHistory
+              ? '<div style="margin-top:12px;">' +
+                (historico.length > 0
+                  ? historico.map(renderQueueItem).join('')
+                  : '<p class="muted" style="margin:0;">Nenhum registro finalizado ainda.</p>') +
+                '</div>'
+              : '') +
+            '</div>' +
+            (state.manualModalOpen
+              ? '<div class="modal-backdrop"><div class="modal-card">' +
+                '<div class="row-flex" style="margin-bottom:12px;"><h3 style="margin:0;">Novo Atendimento Manual (Recepção)</h3>' +
+                '<button class="btn btn-sm btn-outline" id="btn-close-manual">Fechar</button></div>' +
+                '<form id="form-manual">' +
+                '<div class="field"><label class="label">Entidade *</label><select id="man-escala" class="select">' +
+                escalas
+                  .map(function (es) {
+                    return (
+                      '<option value="' +
+                      esc(es.id) +
+                      '" ' +
+                      (es.disponiveis <= 0 ? 'disabled' : '') +
+                      '>' +
+                      esc(es.entidade_nome) +
+                      ' (Restam ' +
+                      es.disponiveis +
+                      ')</option>'
+                    );
+                  })
+                  .join('') +
+                '</select></div>' +
+                '<div class="field"><label class="label">Nome do Consulente *</label>' +
+                '<input id="man-nome" class="input" type="text" required placeholder="Ex.: Sr. Antônio (sem celular)" /></div>' +
+                '<div class="field"><label class="label">Telefone (opcional)</label>' +
+                '<input id="man-tel" class="input" type="tel" maxlength="15" placeholder="(11) 99999-9999" /></div>' +
+                '<button type="submit" class="btn btn-primary btn-lg">Gerar Senha Manual</button>' +
+                '</form></div></div>'
+              : '') +
+            (ausenteTarget
+              ? '<div class="modal-backdrop"><div class="modal-card">' +
+                '<h3 style="margin:0 0 8px;">Registrar Ausência — Senha #' +
+                esc(ausenteTarget.codigo_senha) +
+                '</h3>' +
+                '<p class="muted">Consulente: <strong>' +
+                esc(ausenteTarget.nome_consulente) +
+                '</strong>. Como deseja tratar a vaga desta senha?</p>' +
+                '<div style="display:flex;flex-direction:column;gap:10px;margin-top:14px;">' +
+                '<button class="btn btn-outline btn-lg" id="btn-ausente-manter">Manter vaga bloqueada (apenas registrar ausência)</button>' +
+                '<button class="btn btn-gold btn-lg" id="btn-ausente-liberar">Liberar +1 vaga no limite público para outro consulente</button>' +
+                '<button class="btn btn-sm btn-danger" id="btn-ausente-cancel">Cancelar</button>' +
+                '</div></div></div>'
+              : '') +
+            '</div>'
+          );
+        }
+
+        function renderAdminSubnav() {
+          return (
+            '<nav class="subnav no-print"><div class="subnav-inner">' +
+            '<button class="nav-tab ' +
+            (state.route === '/admin/gira' ? 'active' : '') +
+            '" data-nav="#/admin/gira">Gestão de Gira & QR</button>' +
+            '<button class="nav-tab ' +
+            (state.route === '/admin/cadastros' ? 'active' : '') +
+            '" data-nav="#/admin/cadastros">Cadastros Base & Usuários</button>' +
+            '<button class="nav-tab ' +
+            (state.route === '/admin/relatorios' ? 'active' : '') +
+            '" data-nav="#/admin/relatorios">Relatórios & Excel</button>' +
+            '<button class="nav-tab" data-nav="#/painel">Painel do Cambono</button>' +
+            '</div></nav>'
+          );
+        }
+
+        function ensureDraftEscalas(db) {
+          if (state.draftEscalas.length > 0) return;
+          var ents = db.entidades.filter(function (e) {
+            return e.ativo;
+          });
+          var meds = db.equipe_espiritual.filter(function (m) {
+            return m.ativo && m.funcao === 'MEDIUM';
+          });
+          var cams = db.equipe_espiritual.filter(function (m) {
+            return m.ativo && m.funcao === 'CAMBONO';
+          });
+          if (ents.length && meds.length && cams.length) {
+            state.draftEscalas.push({
+              entidade_id: ents[0].id,
+              medium_id: meds[0].id,
+              cambono_id: cams[0].id,
+              limite_senhas: 15,
+            });
+          }
+        }
+
+        function renderAdminGira(db) {
+          var gira = getGiraAberta(db);
+          var ents = db.entidades.filter(function (e) {
+            return e.ativo;
+          });
+          var meds = db.equipe_espiritual.filter(function (m) {
+            return m.ativo && m.funcao === 'MEDIUM';
+          });
+          var cams = db.equipe_espiritual.filter(function (m) {
+            return m.ativo && m.funcao === 'CAMBONO';
+          });
+
+          if (!gira) {
+            ensureDraftEscalas(db);
+            var rowsHtml = state.draftEscalas
+              .map(function (row, idx) {
+                return (
+                  '<div class="card card-muted" style="padding:12px;margin-bottom:10px;">' +
+                  '<div class="grid-4">' +
+                  '<div><label class="label">Entidade</label><select class="select draft-field" data-idx="' +
+                  idx +
+                  '" data-field="entidade_id">' +
+                  ents
+                    .map(function (e) {
+                      return (
+                        '<option value="' +
+                        esc(e.id) +
+                        '" ' +
+                        (row.entidade_id === e.id ? 'selected' : '') +
+                        '>' +
+                        esc(e.nome) +
+                        '</option>'
+                      );
+                    })
+                    .join('') +
+                  '</select></div>' +
+                  '<div><label class="label">Médium</label><select class="select draft-field" data-idx="' +
+                  idx +
+                  '" data-field="medium_id">' +
+                  meds
+                    .map(function (m) {
+                      return (
+                        '<option value="' +
+                        esc(m.id) +
+                        '" ' +
+                        (row.medium_id === m.id ? 'selected' : '') +
+                        '>' +
+                        esc(m.nome) +
+                        '</option>'
+                      );
+                    })
+                    .join('') +
+                  '</select></div>' +
+                  '<div><label class="label">Cambono</label><select class="select draft-field" data-idx="' +
+                  idx +
+                  '" data-field="cambono_id">' +
+                  cams
+                    .map(function (c) {
+                      return (
+                        '<option value="' +
+                        esc(c.id) +
+                        '" ' +
+                        (row.cambono_id === c.id ? 'selected' : '') +
+                        '>' +
+                        esc(c.nome) +
+                        '</option>'
+                      );
+                    })
+                    .join('') +
+                  '</select></div>' +
+                  '<div><label class="label">Limite Senhas</label>' +
+                  '<div style="display:flex;gap:6px;">' +
+                  '<input type="number" min="1" max="200" class="input draft-field" data-idx="' +
+                  idx +
+                  '" data-field="limite_senhas" value="' +
+                  esc(row.limite_senhas) +
+                  '" />' +
+                  (state.draftEscalas.length > 1
+                    ? '<button type="button" class="btn btn-sm btn-danger" data-del-draft="' +
+                      idx +
+                      '">X</button>'
+                    : '') +
+                  '</div></div>' +
+                  '</div></div>'
+                );
+              })
+              .join('');
+
+            var lastClosed = db.giras.find(function (g) {
+              return g.status === 'ENCERRADA';
+            });
+
+            return (
+              renderAdminSubnav() +
+              '<div class="container">' +
+              renderFlash() +
+              '<div class="alert alert-warn"><strong>Sistema aguardando abertura da gira.</strong> Enquanto nenhuma gira estiver aberta, consulentes não conseguem retirar senhas.</div>' +
+              '<div class="card">' +
+              '<h1 style="margin:0 0 12px; font-size:1.3rem;">Abrir Nova Gira</h1>' +
+              '<form id="form-abrir-gira">' +
+              '<div class="grid-3">' +
+              '<div class="field"><label class="label">Título da Gira *</label>' +
+              '<input id="gira-titulo" class="input" type="text" required value="Gira de Caboclos e Pretos Velhos" /></div>' +
+              '<div class="field"><label class="label">Data *</label>' +
+              '<input id="gira-data" class="input" type="date" required value="' +
+              esc(todayIso()) +
+              '" /></div>' +
+              '<div class="field"><label class="label">Observação (opcional)</label>' +
+              '<input id="gira-obs" class="input" type="text" placeholder="Ex.: Portões abrem às 19h" /></div>' +
+              '</div>' +
+              '<div class="row-flex" style="margin:10px 0;"><strong>Escala de Entidades, Médiuns, Cambonos e Limites</strong>' +
+              '<button type="button" class="btn btn-sm btn-outline" id="btn-add-draft">+ Adicionar Linha</button></div>' +
+              rowsHtml +
+              '<button type="submit" class="btn btn-primary btn-lg" style="margin-top:8px;">Abrir Gira e Liberar Senhas</button>' +
+              '</form>' +
+              '</div>' +
+              (lastClosed
+                ? '<div class="card card-muted"><div class="muted">Última gira encerrada: <strong>' +
+                  esc(lastClosed.titulo) +
+                  '</strong> (' +
+                  esc(formatDateBr(lastClosed.data_gira)) +
+                  ')</div></div>'
+                : '') +
+              '</div>'
+            );
+          }
+
+          // Gira aberta
+          var escalas = getEscalasComVagas(db, gira.id);
+          var defaultUrl = window.location.href.split('#')[0] + '#/';
+          var qrUrl = (state.qrCustomUrl || defaultUrl).trim();
+          var qrSvg = renderQrSvg(qrUrl, 230);
+
+          var escalasCards = escalas
+            .map(function (es) {
+              return (
+                '<div class="card card-muted" style="margin-bottom:10px; padding:14px;">' +
+                '<div class="row-flex">' +
+                '<div>' +
+                '<strong style="font-size:1.05rem;color:var(--primary);">' +
+                esc(es.entidade_nome) +
+                '</strong> ' +
+                (es.pausada
+                  ? '<span class="badge badge-gold">PAUSADA</span>'
+                  : '<span class="badge badge-green">ATIVA</span>') +
+                '<div class="muted">Médium: ' +
+                esc(es.medium_nome) +
+                ' • Cambono: ' +
+                esc(es.cambono_nome) +
+                '</div>' +
+                '<div style="margin-top:4px;font-size:0.9rem;">Emitidas: <strong>' +
+                es.senhas_emitidas +
+                '</strong> / Limite: <strong>' +
+                es.limite_senhas +
+                '</strong> (Restam <strong>' +
+                es.disponiveis +
+                '</strong>)</div>' +
+                '</div>' +
+                '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+                '<button class="btn btn-sm btn-outline" data-lim-delta="-1" data-escala-id="' +
+                esc(es.id) +
+                '" ' +
+                (es.limite_senhas <= es.senhas_emitidas ? 'disabled' : '') +
+                '>-1 Vaga</button>' +
+                '<button class="btn btn-sm btn-outline" data-lim-delta="1" data-escala-id="' +
+                esc(es.id) +
+                '">+1 Vaga</button>' +
+                '<button class="btn btn-sm ' +
+                (es.pausada ? 'btn-primary' : 'btn-gold') +
+                '" data-toggle-pausa="' +
+                esc(es.id) +
+                '">' +
+                (es.pausada ? 'Retomar' : 'Pausar') +
+                '</button>' +
+                '<button class="btn btn-sm btn-danger" data-del-escala="' +
+                esc(es.id) +
+                '">Excluir</button>' +
+                '</div>' +
+                '</div>' +
+                '</div>'
+              );
+            })
+            .join('');
+
+          var usedEntIds = escalas.map(function (e) {
+            return e.entidade_id;
+          });
+          var availEnts = ents.filter(function (e) {
+            return usedEntIds.indexOf(e.id) === -1;
+          });
+
+          return (
+            renderAdminSubnav() +
+            '<div class="poster-only">' +
+            '<img src="' +
+            LOGO_PATH +
+            '" alt="Logo" style="width:140px;height:140px;border-radius:999px;border:3px solid #0f5132;object-fit:cover;" />' +
+            '<h1 style="margin:10px 0 4px;color:#0f5132;">' +
+            esc(TERREIRO_NOME) +
+            '</h1>' +
+            '<h2 style="margin:0 0 18px;font-weight:600;">' +
+            esc(TERREIRO_SUB) +
+            '</h2>' +
+            '<p style="font-size:1.25rem;margin-bottom:14px;"><strong>' +
+            esc(gira.titulo) +
+            '</strong> — ' +
+            esc(formatDateBr(gira.data_gira)) +
+            '</p>' +
+            '<div style="display:inline-block;padding:18px;border:3px solid #0f5132;border-radius:16px;">' +
+            renderQrSvg(qrUrl, 340) +
+            '</div>' +
+            '<h3 style="margin:18px 0 6px;">Aponte a câmera do celular para retirar sua senha</h3>' +
+            '<p style="font-size:0.9rem;color:#475569;">' +
+            esc(qrUrl) +
+            '</p>' +
+            '</div>' +
+            '<div class="container print-hide-main">' +
+            renderFlash() +
+            '<div class="card">' +
+            '<div class="row-flex">' +
+            '<div>' +
+            '<span class="badge badge-green">GIRA ABERTA</span>' +
+            '<h1 style="margin:4px 0 2px;font-size:1.3rem;">' +
+            esc(gira.titulo) +
+            '</h1>' +
+            '<div class="muted">Data: ' +
+            esc(formatDateBr(gira.data_gira)) +
+            '</div>' +
+            '</div>' +
+            '<button class="btn btn-danger" id="btn-encerrar-gira">Encerrar Gira</button>' +
+            '</div>' +
+            '</div>' +
+            '<div class="grid-2">' +
+            '<div>' +
+            '<div class="card">' +
+            '<h2 style="margin:0 0 12px;font-size:1.05rem;">Controle de Vagas em Tempo Real</h2>' +
+            escalasCards +
+            (availEnts.length > 0 && meds.length > 0 && cams.length > 0
+              ? '<form id="form-add-escala-aberta" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">' +
+                '<div class="label">Adicionar mais uma Entidade à gira aberta:</div>' +
+                '<div class="grid-2">' +
+                '<select id="add-ent" class="select">' +
+                availEnts
+                  .map(function (e) {
+                    return '<option value="' + esc(e.id) + '">' + esc(e.nome) + '</option>';
+                  })
+                  .join('') +
+                '</select>' +
+                '<select id="add-med" class="select">' +
+                meds
+                  .map(function (m) {
+                    return '<option value="' + esc(m.id) + '">' + esc(m.nome) + '</option>';
+                  })
+                  .join('') +
+                '</select>' +
+                '<select id="add-cam" class="select">' +
+                cams
+                  .map(function (c) {
+                    return '<option value="' + esc(c.id) + '">' + esc(c.nome) + '</option>';
+                  })
+                  .join('') +
+                '</select>' +
+                '<input id="add-lim" type="number" min="1" value="15" class="input" placeholder="Vagas" />' +
+                '</div>' +
+                '<button type="submit" class="btn btn-outline btn-sm" style="margin-top:8px;">+ Incluir na Gira</button>' +
+                '</form>'
+              : '') +
+            '</div>' +
+            '</div>' +
+            '<div>' +
+            '<div class="card">' +
+            '<h2 style="margin:0 0 8px;font-size:1.05rem;">QR Code da Recepção</h2>' +
+            '<div class="qr-box">' +
+            qrSvg +
+            '<div class="muted" style="margin-top:8px;word-break:break-all;text-align:center;">' +
+            esc(qrUrl) +
+            '</div>' +
+            '</div>' +
+            '<div class="field" style="margin-top:12px;">' +
+            '<label class="label" for="inp-qr-url">URL do QR Code (edite se quiser apontar para o site no GitHub Pages)</label>' +
+            '<input id="inp-qr-url" class="input" type="url" value="' +
+            esc(qrUrl) +
+            '" />' +
+            '</div>' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+            '<button class="btn btn-primary btn-sm" id="btn-print-poster">Imprimir Cartaz</button>' +
+            '<button class="btn btn-outline btn-sm" id="btn-download-qr">Baixar PNG</button>' +
+            '<button class="btn btn-outline btn-sm" id="btn-copy-qr-url">Copiar Link</button>' +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+            '</div>' +
+            '</div>'
+          );
+        }
+
+        function renderAdminCadastros(db) {
+          var entRows = db.entidades
+            .map(function (e) {
+              return (
+                '<tr>' +
+                '<td><strong>' +
+                esc(e.nome) +
+                '</strong><div class="muted">' +
+                esc(e.descricao || '') +
+                '</div></td>' +
+                '<td><span class="badge ' +
+                (e.ativo ? 'badge-green' : 'badge-gray') +
+                '">' +
+                (e.ativo ? 'Ativa' : 'Inativa') +
+                '</span></td>' +
+                '<td style="white-space:nowrap;">' +
+                '<button class="btn btn-sm btn-outline" data-toggle-ent="' +
+                esc(e.id) +
+                '">' +
+                (e.ativo ? 'Desativar' : 'Ativar') +
+                '</button>' +
+                '</td></tr>'
+              );
+            })
+            .join('');
+
+          var eqRows = db.equipe_espiritual
+            .map(function (m) {
+              return (
+                '<tr>' +
+                '<td><strong>' +
+                esc(m.nome) +
+                '</strong></td>' +
+                '<td><span class="badge ' +
+                (m.funcao === 'MEDIUM' ? 'badge-blue' : 'badge-gold') +
+                '">' +
+                esc(m.funcao) +
+                '</span></td>' +
+                '<td><span class="badge ' +
+                (m.ativo ? 'badge-green' : 'badge-gray') +
+                '">' +
+                (m.ativo ? 'Ativo' : 'Inativo') +
+                '</span></td>' +
+                '<td><button class="btn btn-sm btn-outline" data-toggle-eq="' +
+                esc(m.id) +
+                '">' +
+                (m.ativo ? 'Desativar' : 'Ativar') +
+                '</button></td></tr>'
+              );
+            })
+            .join('');
+
+          var usrRows = (db.perfis_acesso || [])
+            .map(function (u) {
+              return (
+                '<tr>' +
+                '<td><strong>' +
+                esc(u.nome) +
+                '</strong></td>' +
+                '<td>' +
+                esc(u.email) +
+                '</td>' +
+                '<td><span class="badge ' +
+                (u.papel === 'ADMIN' ? 'badge-green' : 'badge-gold') +
+                '">' +
+                esc(u.papel) +
+                '</span></td>' +
+                '<td><button class="btn btn-sm btn-outline" data-toggle-usr="' +
+                esc(u.id) +
+                '">' +
+                (u.ativo ? 'Ativo' : 'Bloqueado') +
+                '</button></td></tr>'
+              );
+            })
+            .join('');
+
+          return (
+            renderAdminSubnav() +
+            '<div class="container">' +
+            renderFlash() +
+            '<div class="grid-2">' +
+            '<div class="card">' +
+            '<h2 style="margin:0 0 10px;font-size:1.1rem;">Entidades Espirituais</h2>' +
+            '<form id="form-new-ent" style="margin-bottom:14px;">' +
+            '<div class="field"><label class="label">Nome da Entidade *</label><input id="new-ent-nome" class="input" required placeholder="Ex.: Exu Tranca Ruas" /></div>' +
+            '<div class="field"><label class="label">Descrição / Linha</label><input id="new-ent-desc" class="input" placeholder="Ex.: Linha da esquerda — desobsessão" /></div>' +
+            '<button type="submit" class="btn btn-primary btn-sm">+ Cadastrar Entidade</button>' +
+            '</form>' +
+            '<div class="table-wrap"><table><thead><tr><th>Entidade</th><th>Status</th><th>Ação</th></tr></thead><tbody>' +
+            entRows +
+            '</tbody></table></div>' +
+            '</div>' +
+            '<div class="card">' +
+            '<h2 style="margin:0 0 10px;font-size:1.1rem;">Equipe Espiritual (Médiuns & Cambonos)</h2>' +
+            '<form id="form-new-eq" style="margin-bottom:14px;">' +
+            '<div class="grid-2">' +
+            '<div class="field"><label class="label">Nome *</label><input id="new-eq-nome" class="input" required placeholder="Ex.: Cambona Ana" /></div>' +
+            '<div class="field"><label class="label">Função *</label><select id="new-eq-func" class="select"><option value="MEDIUM">Médium</option><option value="CAMBONO">Cambono</option></select></div>' +
+            '</div>' +
+            '<button type="submit" class="btn btn-primary btn-sm">+ Cadastrar Integrante</button>' +
+            '</form>' +
+            '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>Função</th><th>Status</th><th>Ação</th></tr></thead><tbody>' +
+            eqRows +
+            '</tbody></table></div>' +
+            '</div>' +
+            '</div>' +
+            '<div class="card">' +
+            '<h2 style="margin:0 0 8px;font-size:1.1rem;">Usuários de Acesso (Modo Local)</h2>' +
+            (isSupabaseActive()
+              ? '<p class="muted">No modo Online, novos logins são criados pelo painel Authentication do Supabase.</p>'
+              : '<form id="form-new-usr" style="margin-bottom:14px;"><div class="grid-4">' +
+                '<div><label class="label">Nome *</label><input id="usr-nome" class="input" required placeholder="Nome" /></div>' +
+                '<div><label class="label">E-mail *</label><input id="usr-email" class="input" type="email" required placeholder="email@terreiro.org" /></div>' +
+                '<div><label class="label">Senha *</label><input id="usr-pass" class="input" type="text" required value="123456" /></div>' +
+                '<div><label class="label">Papel *</label><select id="usr-papel" class="select"><option value="CAMBONO">Cambono</option><option value="ADMIN">Administrador</option></select></div>' +
+                '</div><button type="submit" class="btn btn-primary btn-sm" style="margin-top:10px;">+ Adicionar Usuário</button></form>' +
+                '<div class="table-wrap"><table><thead><tr><th>Nome</th><th>E-mail</th><th>Papel</th><th>Status</th></tr></thead><tbody>' +
+                usrRows +
+                '</tbody></table></div>') +
+            '</div>' +
+            '</div>'
+          );
+        }
+
+        function renderAdminRelatorios(db) {
+          var rows = getFilteredReportRows(db);
+          var f = state.reportFilters;
+          var tot = rows.length;
+          var at = rows.filter(function (r) {
+            return r.status === 'ATENDIDO';
+          }).length;
+          var au = rows.filter(function (r) {
+            return r.status === 'AUSENTE';
+          }).length;
+          var qr = rows.filter(function (r) {
+            return r.origem === 'QR_CODE';
+          }).length;
+
+          return (
+            renderAdminSubnav() +
+            '<div class="container">' +
+            renderFlash() +
+            '<div class="card">' +
+            '<div class="row-flex" style="margin-bottom:12px;">' +
+            '<h1 style="margin:0;font-size:1.25rem;">Relatórios de Atendimentos</h1>' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+            '<button class="btn btn-primary btn-sm" id="btn-exp-xls" ' +
+            (rows.length === 0 ? 'disabled' : '') +
+            '>Exportar Excel (.xls)</button>' +
+            '<button class="btn btn-outline btn-sm" id="btn-exp-csv" ' +
+            (rows.length === 0 ? 'disabled' : '') +
+            '>Exportar CSV</button>' +
+            '</div>' +
+            '</div>' +
+            '<div class="grid-4">' +
+            '<div><label class="label">Gira</label><select id="rep-gira" class="select">' +
+            '<option value="ALL">Todas as Giras</option>' +
+            db.giras
+              .map(function (g) {
+                return (
+                  '<option value="' +
+                  esc(g.id) +
+                  '" ' +
+                  (f.gira_id === g.id ? 'selected' : '') +
+                  '>' +
+                  esc(formatDateBr(g.data_gira)) +
+                  ' — ' +
+                  esc(g.titulo) +
+                  '</option>'
+                );
+              })
+              .join('') +
+            '</select></div>' +
+            '<div><label class="label">Entidade</label><select id="rep-ent" class="select">' +
+            '<option value="ALL">Todas as Entidades</option>' +
+            db.entidades
+              .map(function (e) {
+                return (
+                  '<option value="' +
+                  esc(e.id) +
+                  '" ' +
+                  (f.entidade_id === e.id ? 'selected' : '') +
+                  '>' +
+                  esc(e.nome) +
+                  '</option>'
+                );
+              })
+              .join('') +
+            '</select></div>' +
+            '<div><label class="label">Status</label><select id="rep-status" class="select">' +
+            '<option value="ALL">Todos</option>' +
+            '<option value="ATENDIDO" ' +
+            (f.status === 'ATENDIDO' ? 'selected' : '') +
+            '>Atendido</option>' +
+            '<option value="AGUARDANDO" ' +
+            (f.status === 'AGUARDANDO' ? 'selected' : '') +
+            '>Aguardando</option>' +
+            '<option value="EM_ATENDIMENTO" ' +
+            (f.status === 'EM_ATENDIMENTO' ? 'selected' : '') +
+            '>Em Atendimento</option>' +
+            '<option value="AUSENTE" ' +
+            (f.status === 'AUSENTE' ? 'selected' : '') +
+            '>Ausente</option>' +
+            '<option value="NAO_ATENDIDO" ' +
+            (f.status === 'NAO_ATENDIDO' ? 'selected' : '') +
+            '>Não Atendido</option>' +
+            '</select></div>' +
+            '<div><label class="label">Busca</label><input id="rep-busca" class="input" placeholder="Nome, telefone ou senha..." value="' +
+            esc(f.busca) +
+            '" /></div>' +
+            '</div>' +
+            '</div>' +
+            '<div class="grid-4" style="margin-bottom:16px;">' +
+            '<div class="stat-box"><div class="stat-val">' +
+            tot +
+            '</div><div class="stat-lbl">Total Filtrado</div></div>' +
+            '<div class="stat-box"><div class="stat-val" style="color:var(--primary);">' +
+            at +
+            '</div><div class="stat-lbl">Atendidos</div></div>' +
+            '<div class="stat-box"><div class="stat-val" style="color:var(--danger);">' +
+            au +
+            '</div><div class="stat-lbl">Ausentes</div></div>' +
+            '<div class="stat-box"><div class="stat-val" style="color:var(--info);">' +
+            qr +
+            ' / ' +
+            (tot - qr) +
+            '</div><div class="stat-lbl">QR Code / Manual</div></div>' +
+            '</div>' +
+            '<div class="card" style="padding:0; overflow:hidden;">' +
+            '<div class="table-wrap"><table><thead><tr>' +
+            '<th>Gira</th><th>Senha</th><th>Consulente</th><th>Telefone</th><th>Entidade</th><th>Médium / Cambono</th><th>Origem</th><th>Status</th><th>Emissão</th>' +
+            '</tr></thead><tbody>' +
+            (rows.length > 0
+              ? rows
+                  .map(function (r) {
+                    return (
+                      '<tr>' +
+                      '<td>' +
+                      esc(formatDateBr(r.gira_data)) +
+                      '<div class="muted">' +
+                      esc(r.gira_titulo) +
+                      '</div></td>' +
+                      '<td><strong>#' +
+                      esc(r.codigo_senha) +
+                      '</strong></td>' +
+                      '<td>' +
+                      esc(r.nome_consulente) +
+                      '</td>' +
+                      '<td>' +
+                      esc(r.telefone_consulente || '-') +
+                      '</td>' +
+                      '<td>' +
+                      esc(r.entidade_nome) +
+                      '</td>' +
+                      '<td>' +
+                      esc(r.medium_nome) +
+                      '<div class="muted">' +
+                      esc(r.cambono_nome) +
+                      '</div></td>' +
+                      '<td>' +
+                      esc(r.origem) +
+                      '</td>' +
+                      '<td><span class="badge ' +
+                      (STATUS_BADGE[r.status] || 'badge-gray') +
+                      '">' +
+                      esc(STATUS_LABEL[r.status] || r.status) +
+                      '</span></td>' +
+                      '<td>' +
+                      esc(formatDateTimeBr(r.criado_em)) +
+                      '</td>' +
+                      '</tr>'
+                    );
+                  })
+                  .join('')
+              : '<tr><td colspan="9" style="text-align:center;padding:24px;" class="muted">Nenhum atendimento registrado até o momento.</td></tr>') +
+            '</tbody></table></div></div>' +
+            '</div>'
+          );
+        }
+
+        function render() {
+          var app = document.getElementById('app');
+          var db = getActiveDb();
+          var auth = getAuth();
+          var r = state.route;
+
+          // Proteção de rotas
+          if (r === '/painel' && !auth) {
+            state.route = '/login';
+            r = '/login';
+          }
+          if (r.indexOf('/admin') === 0) {
+            if (!auth) {
+              state.route = '/login';
+              r = '/login';
+            } else if (auth.papel !== 'ADMIN') {
+              setFlash('err', 'Acesso restrito a Administradores.');
+              state.route = '/painel';
+              r = '/painel';
+            }
+          }
+
+          var bodyHtml = '';
+          if (r === '/senha') bodyHtml = renderSenha(db);
+          else if (r === '/login') bodyHtml = renderLogin();
+          else if (r === '/painel') bodyHtml = renderPainel(db, auth);
+          else if (r === '/admin/gira') bodyHtml = renderAdminGira(db);
+          else if (r === '/admin/cadastros') bodyHtml = renderAdminCadastros(db);
+          else if (r === '/admin/relatorios') bodyHtml = renderAdminRelatorios(db);
+          else bodyHtml = renderCheckin(db);
+
+          app.innerHTML =
+            renderTopbar(auth) +
+            '<main style="flex:1;display:flex;flex-direction:column;">' +
+            bodyHtml +
+            '</main>' +
+            '<footer>' +
+            esc(TERREIRO_NOME) +
+            ' • ' +
+            esc(TERREIRO_SUB) +
+            ' — Sistema de Gestão de Senhas e Atendimentos (Custo Zero)</footer>';
+
+          bindEvents(db, auth);
+        }
+
+        // ============================================================
+        // EVENTOS DOM APÓS RENDER
+        // ============================================================
+        function bindEvents(db, auth) {
+          document.querySelectorAll('[data-nav]').forEach(function (el) {
+            el.addEventListener('click', function () {
+              state.flash = null;
+              navigate(el.getAttribute('data-nav'));
+            });
+          });
+
+          var btnFlash = document.getElementById('btn-close-flash');
+          if (btnFlash) {
+            btnFlash.addEventListener('click', function () {
+              state.flash = null;
+              render();
+            });
+          }
+
+          var btnInstall = document.getElementById('btn-install-pwa');
+          if (btnInstall && state.deferredPrompt) {
+            btnInstall.addEventListener('click', function () {
+              var p = state.deferredPrompt;
+              state.deferredPrompt = null;
+              p.prompt();
+              render();
+            });
+          }
+
+          var btnLogout = document.getElementById('btn-logout');
+          if (btnLogout) {
+            btnLogout.addEventListener('click', function () {
+              setAuth(null);
+              navigate('#/');
+            });
+          }
+
+          // Check-in
+          document.querySelectorAll('[data-select-escala]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              state.selectedEscalaId = btn.getAttribute('data-select-escala');
+              render();
+              var card = document.getElementById('checkin-form-card');
+              if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+          });
+
+          var inpTel = document.getElementById('inp-tel');
+          if (inpTel) {
+            inpTel.addEventListener('input', function () {
+              inpTel.value = formatPhone(inpTel.value);
+            });
+          }
+
+          var formCheckin = document.getElementById('form-checkin');
+          if (formCheckin) {
+            formCheckin.addEventListener('submit', function (ev) {
+              ev.preventDefault();
+              var nome = document.getElementById('inp-nome').value;
+              var tel = document.getElementById('inp-tel').value;
+              emitirSenhaPublica(state.selectedEscalaId, nome, tel);
+            });
+          }
+
+          // Senha
+          document.querySelectorAll('[data-pick-comp]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              setActiveComprovanteId(btn.getAttribute('data-pick-comp'));
+              render();
+            });
+          });
+
+          var btnSound = document.getElementById('btn-toggle-sound');
+          if (btnSound) {
+            btnSound.addEventListener('click', function () {
+              state.soundEnabled = !state.soundEnabled;
+              if (state.soundEnabled) playChime();
+              render();
+            });
+          }
+
+          var btnRefSenha = document.getElementById('btn-refresh-senha');
+          if (btnRefSenha) {
+            btnRefSenha.addEventListener('click', function () {
+              if (isSupabaseActive()) syncSupabaseState(false);
+              else render();
+            });
+          }
+
+          // Login
+          var formLogin = document.getElementById('form-login');
+          if (formLogin) {
+            formLogin.addEventListener('submit', async function (ev) {
+              ev.preventDefault();
+              var email = document.getElementById('login-email').value.trim().toLowerCase();
+              var pass = document.getElementById('login-pass').value;
+              if (isSupabaseActive()) {
+                try {
+                  var cfg = getSupabaseConfig();
+                  var tok = await sbFetch('/auth/v1/token?grant_type=password', {
+                    method: 'POST',
+                    headers: {
+                      apikey: cfg.anonKey,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email: email, password: pass }),
+                  });
+                  cfg.accessToken = tok.access_token;
+                  localStorage.setItem(SUPABASE_RUNTIME_KEY, JSON.stringify(cfg));
+                  var perfis = await sbFetch(
+                    '/rest/v1/perfis_acesso?id=eq.' + tok.user.id + '&select=*',
+                    { headers: sbHeaders(cfg, true) }
+                  );
+                  var p = perfis && perfis[0];
+                  if (!p || !p.ativo) {
+                    setFlash('err', 'Perfil não encontrado ou bloqueado.');
+                    return render();
+                  }
+                  setAuth(p);
+                  await syncSupabaseState(true);
+                  navigate(p.papel === 'ADMIN' ? '#/admin/gira' : '#/painel');
+                } catch (err) {
+                  setFlash('err', 'Falha no login Supabase: ' + err.message);
+                  render();
+                }
+                return;
+              }
+
+              var ldb = getLocalDb();
+              var user = (ldb.perfis_acesso || []).find(function (u) {
+                return u.email.toLowerCase() === email && u.senha_demo === pass;
+              });
+              if (!user) {
+                setFlash('err', 'E-mail ou senha inválidos.');
+                return render();
+              }
+              if (!user.ativo) {
+                setFlash('err', 'Usuário desativado pelo Administrador.');
+                return render();
+              }
+              setAuth({
+                id: user.id,
+                nome: user.nome,
+                email: user.email,
+                papel: user.papel,
+              });
+              state.flash = null;
+              navigate(user.papel === 'ADMIN' ? '#/admin/gira' : '#/painel');
+            });
+          }
+
+          var formSb = document.getElementById('form-supabase-cfg');
+          if (formSb) {
+            formSb.addEventListener('submit', async function (ev) {
+              ev.preventDefault();
+              var u = document.getElementById('sb-url').value.trim().replace(/\/+$/, '');
+              var k = document.getElementById('sb-key').value.trim();
+              if (!u || !k) {
+                setFlash('err', 'Preencha URL e Anon Key do Supabase.');
+                return render();
+              }
+              localStorage.setItem(
+                SUPABASE_RUNTIME_KEY,
+                JSON.stringify({ url: u, anonKey: k, accessToken: null })
+              );
+              setAuth(null);
+              setFlash('ok', 'Configuração Supabase salva! Faça login com sua conta do Supabase.');
+              await syncSupabaseState(true);
+              render();
+            });
+          }
+
+          var btnSbClear = document.getElementById('btn-sb-clear');
+          if (btnSbClear) {
+            btnSbClear.addEventListener('click', function () {
+              localStorage.removeItem(SUPABASE_RUNTIME_KEY);
+              state.supabaseCache = null;
+              setAuth(null);
+              setFlash('ok', 'Sistema alternado para Modo Local neste computador.');
+              render();
+            });
+          }
+
+          // Painel Cambono
+          document.querySelectorAll('[data-filter-ent]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              state.filterEntidadeId = btn.getAttribute('data-filter-ent');
+              render();
+            });
+          });
+
+          var btnVoice = document.getElementById('btn-toggle-voice');
+          if (btnVoice) {
+            btnVoice.addEventListener('click', function () {
+              state.voiceEnabled = !state.voiceEnabled;
+              render();
+            });
+          }
+
+          var btnHist = document.getElementById('btn-toggle-history');
+          if (btnHist) {
+            btnHist.addEventListener('click', function () {
+              state.showHistory = !state.showHistory;
+              render();
+            });
+          }
+
+          document.querySelectorAll('[data-chamar]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              chamarAtendimento(btn.getAttribute('data-chamar'));
+            });
+          });
+
+          document.querySelectorAll('[data-finalizar]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              finalizarAtendimento(btn.getAttribute('data-finalizar'));
+            });
+          });
+
+          document.querySelectorAll('[data-ausente-open]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              state.ausenteTargetId = btn.getAttribute('data-ausente-open');
+              render();
+            });
+          });
+
+          var btnOpenMan = document.getElementById('btn-open-manual');
+          if (btnOpenMan) {
+            btnOpenMan.addEventListener('click', function () {
+              state.manualModalOpen = true;
+              render();
+            });
+          }
+          var btnCloseMan = document.getElementById('btn-close-manual');
+          if (btnCloseMan) {
+            btnCloseMan.addEventListener('click', function () {
+              state.manualModalOpen = false;
+              render();
+            });
+          }
+          var manTel = document.getElementById('man-tel');
+          if (manTel) {
+            manTel.addEventListener('input', function () {
+              manTel.value = formatPhone(manTel.value);
+            });
+          }
+          var formMan = document.getElementById('form-manual');
+          if (formMan) {
+            formMan.addEventListener('submit', function (ev) {
+              ev.preventDefault();
+              emitirSenhaManual(
+                document.getElementById('man-escala').value,
+                document.getElementById('man-nome').value,
+                document.getElementById('man-tel').value
+              );
+            });
+          }
+
+          var btnAusMan = document.getElementById('btn-ausente-manter');
+          if (btnAusMan) {
+            btnAusMan.addEventListener('click', function () {
+              confirmarAusencia(state.ausenteTargetId, false);
+            });
+          }
+          var btnAusLib = document.getElementById('btn-ausente-liberar');
+          if (btnAusLib) {
+            btnAusLib.addEventListener('click', function () {
+              confirmarAusencia(state.ausenteTargetId, true);
+            });
+          }
+          var btnAusCan = document.getElementById('btn-ausente-cancel');
+          if (btnAusCan) {
+            btnAusCan.addEventListener('click', function () {
+              state.ausenteTargetId = null;
+              render();
+            });
+          }
+
+          // Admin Gira
+          document.querySelectorAll('.draft-field').forEach(function (el) {
+            el.addEventListener('change', function () {
+              var idx = Number(el.getAttribute('data-idx'));
+              var field = el.getAttribute('data-field');
+              if (state.draftEscalas[idx]) {
+                state.draftEscalas[idx][field] =
+                  field === 'limite_senhas' ? Number(el.value) || 1 : el.value;
+              }
+            });
+          });
+
+          document.querySelectorAll('[data-del-draft]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var idx = Number(btn.getAttribute('data-del-draft'));
+              state.draftEscalas.splice(idx, 1);
+              render();
+            });
+          });
+
+          var btnAddDraft = document.getElementById('btn-add-draft');
+          if (btnAddDraft) {
+            btnAddDraft.addEventListener('click', function () {
+              var ents = db.entidades.filter(function (e) {
+                return e.ativo;
+              });
+              var meds = db.equipe_espiritual.filter(function (m) {
+                return m.ativo && m.funcao === 'MEDIUM';
+              });
+              var cams = db.equipe_espiritual.filter(function (m) {
+                return m.ativo && m.funcao === 'CAMBONO';
+              });
+              var used = state.draftEscalas.map(function (r) {
+                return r.entidade_id;
+              });
+              var nextEnt =
+                ents.find(function (e) {
+                  return used.indexOf(e.id) === -1;
+                }) || ents[0];
+              if (nextEnt && meds.length && cams.length) {
+                state.draftEscalas.push({
+                  entidade_id: nextEnt.id,
+                  medium_id: meds[0].id,
+                  cambono_id: cams[0].id,
+                  limite_senhas: 15,
+                });
+                render();
+              } else {
+                setFlash('err', 'Cadastre Entidades, Médiuns e Cambonos ativos primeiro.');
+                render();
+              }
+            });
+          }
+
+          var formAbrir = document.getElementById('form-abrir-gira');
+          if (formAbrir) {
+            formAbrir.addEventListener('submit', function (ev) {
+              ev.preventDefault();
+              abrirNovaGira(
+                document.getElementById('gira-titulo').value,
+                document.getElementById('gira-data').value,
+                document.getElementById('gira-obs').value,
+                state.draftEscalas
+              );
+            });
+          }
+
+          document.querySelectorAll('[data-lim-delta]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              ajustarLimiteEscala(
+                btn.getAttribute('data-escala-id'),
+                Number(btn.getAttribute('data-lim-delta'))
+              );
+            });
+          });
+
+          document.querySelectorAll('[data-toggle-pausa]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              togglePausaEscala(btn.getAttribute('data-toggle-pausa'));
+            });
+          });
+
+          document.querySelectorAll('[data-del-escala]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              excluirEscalaDaGira(btn.getAttribute('data-del-escala'));
+            });
+          });
+
+          var formAddEsc = document.getElementById('form-add-escala-aberta');
+          if (formAddEsc) {
+            formAddEsc.addEventListener('submit', function (ev) {
+              ev.preventDefault();
+              adicionarEscalaEmGiraAberta(
+                document.getElementById('add-ent').value,
+                document.getElementById('add-med').value,
+                document.getElementById('add-cam').value,
+                document.getElementById('add-lim').value
+              );
+            });
+          }
+
+          var btnEncerrar = document.getElementById('btn-encerrar-gira');
+          if (btnEncerrar) {
+            btnEncerrar.addEventListener('click', encerrarGiraAtual);
+          }
+
+          var inpQrUrl = document.getElementById('inp-qr-url');
+          if (inpQrUrl) {
+            inpQrUrl.addEventListener('change', function () {
+              state.qrCustomUrl = inpQrUrl.value.trim();
+              render();
+            });
+          }
+
+          var btnPrint = document.getElementById('btn-print-poster');
+          if (btnPrint) {
+            btnPrint.addEventListener('click', function () {
+              window.print();
+            });
+          }
+
+          var btnDlQr = document.getElementById('btn-download-qr');
+          if (btnDlQr) {
+            btnDlQr.addEventListener('click', function () {
+              var u = document.getElementById('inp-qr-url').value.trim();
+              downloadQrPng(u, 'qrcode-recepcao-iforiti.png');
+            });
+          }
+
+          var btnCopyQr = document.getElementById('btn-copy-qr-url');
+          if (btnCopyQr) {
+            btnCopyQr.addEventListener('click', function () {
+              var u = document.getElementById('inp-qr-url').value.trim();
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(u).then(function () {
+                  setFlash('ok', 'Link copiado para a área de transferência!');
+                  render();
+                });
+              } else {
+                window.prompt('Copie o link do check-in:', u);
+              }
+            });
+          }
+
+          // Admin Cadastros
+          var formEnt = document.getElementById('form-new-ent');
+          if (formEnt) {
+            formEnt.addEventListener('submit', async function (ev) {
+              ev.preventDefault();
+              var nome = document.getElementById('new-ent-nome').value.trim();
+              var desc = document.getElementById('new-ent-desc').value.trim();
+              if (!nome) return;
+              if (isSupabaseActive()) {
+                try {
+                  var cfg = getSupabaseConfig();
+                  await sbFetch('/rest/v1/entidades', {
+                    method: 'POST',
+                    headers: sbHeaders(cfg, true),
+                    body: JSON.stringify({ nome: nome, descricao: desc || null, ativo: true }),
+                  });
+                  await syncSupabaseState(true);
+                } catch (err) {
+                  setFlash('err', err.message);
+                  render();
+                }
+                return;
+              }
+              var ldb = getLocalDb();
+              ldb.entidades.push({
+                id: uid(),
+                nome: nome,
+                descricao: desc,
+                ativo: true,
+                criado_em: new Date().toISOString(),
+              });
+              saveLocalDb(ldb);
+              setFlash('ok', 'Entidade cadastrada!');
+              render();
+            });
+          }
+
+          document.querySelectorAll('[data-toggle-ent]').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+              var id = btn.getAttribute('data-toggle-ent');
+              if (isSupabaseActive()) {
+                try {
+                  var cur = db.entidades.find(function (e) {
+                    return e.id === id;
+                  });
+                  var cfg = getSupabaseConfig();
+                  await sbFetch('/rest/v1/entidades?id=eq.' + id, {
+                    method: 'PATCH',
+                    headers: sbHeaders(cfg, true),
+                    body: JSON.stringify({ ativo: !cur.ativo }),
+                  });
+                  await syncSupabaseState(true);
+                } catch (err) {
+                  setFlash('err', err.message);
+                  render();
+                }
+                return;
+              }
+              var ldb = getLocalDb();
+              var item = ldb.entidades.find(function (e) {
+                return e.id === id;
+              });
+              if (item) {
+                item.ativo = !item.ativo;
+                saveLocalDb(ldb);
+                render();
+              }
+            });
+          });
+
+          var formEq = document.getElementById('form-new-eq');
+          if (formEq) {
+            formEq.addEventListener('submit', async function (ev) {
+              ev.preventDefault();
+              var nome = document.getElementById('new-eq-nome').value.trim();
+              var funcao = document.getElementById('new-eq-func').value;
+              if (!nome) return;
+              if (isSupabaseActive()) {
+                try {
+                  var cfg = getSupabaseConfig();
+                  await sbFetch('/rest/v1/equipe_espiritual', {
+                    method: 'POST',
+                    headers: sbHeaders(cfg, true),
+                    body: JSON.stringify({ nome: nome, funcao: funcao, ativo: true }),
+                  });
+                  await syncSupabaseState(true);
+                } catch (err) {
+                  setFlash('err', err.message);
+                  render();
+                }
+                return;
+              }
+              var ldb = getLocalDb();
+              ldb.equipe_espiritual.push({
+                id: uid(),
+                nome: nome,
+                funcao: funcao,
+                ativo: true,
+                criado_em: new Date().toISOString(),
+              });
+              saveLocalDb(ldb);
+              setFlash('ok', 'Integrante cadastrado!');
+              render();
+            });
+          }
+
+          document.querySelectorAll('[data-toggle-eq]').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+              var id = btn.getAttribute('data-toggle-eq');
+              if (isSupabaseActive()) {
+                try {
+                  var cur = db.equipe_espiritual.find(function (m) {
+                    return m.id === id;
+                  });
+                  var cfg = getSupabaseConfig();
+                  await sbFetch('/rest/v1/equipe_espiritual?id=eq.' + id, {
+                    method: 'PATCH',
+                    headers: sbHeaders(cfg, true),
+                    body: JSON.stringify({ ativo: !cur.ativo }),
+                  });
+                  await syncSupabaseState(true);
+                } catch (err) {
+                  setFlash('err', err.message);
+                  render();
+                }
+                return;
+              }
+              var ldb = getLocalDb();
+              var item = ldb.equipe_espiritual.find(function (m) {
+                return m.id === id;
+              });
+              if (item) {
+                item.ativo = !item.ativo;
+                saveLocalDb(ldb);
+                render();
+              }
+            });
+          });
+
+          var formUsr = document.getElementById('form-new-usr');
+          if (formUsr) {
+            formUsr.addEventListener('submit', function (ev) {
+              ev.preventDefault();
+              var ldb = getLocalDb();
+              var email = document.getElementById('usr-email').value.trim().toLowerCase();
+              if (
+                ldb.perfis_acesso.some(function (u) {
+                  return u.email.toLowerCase() === email;
+                })
+              ) {
+                setFlash('err', 'Já existe um usuário com este e-mail.');
+                return render();
+              }
+              ldb.perfis_acesso.push({
+                id: uid(),
+                nome: document.getElementById('usr-nome').value.trim(),
+                email: email,
+                senha_demo: document.getElementById('usr-pass').value,
+                papel: document.getElementById('usr-papel').value,
+                ativo: true,
+              });
+              saveLocalDb(ldb);
+              setFlash('ok', 'Usuário adicionado!');
+              render();
+            });
+          }
+
+          document.querySelectorAll('[data-toggle-usr]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var id = btn.getAttribute('data-toggle-usr');
+              var ldb = getLocalDb();
+              var u = ldb.perfis_acesso.find(function (x) {
+                return x.id === id;
+              });
+              if (u) {
+                u.ativo = !u.ativo;
+                saveLocalDb(ldb);
+                render();
+              }
+            });
+          });
+
+          // Admin Relatórios
+          var repGira = document.getElementById('rep-gira');
+          if (repGira) {
+            repGira.addEventListener('change', function () {
+              state.reportFilters.gira_id = repGira.value;
+              render();
+            });
+          }
+          var repEnt = document.getElementById('rep-ent');
+          if (repEnt) {
+            repEnt.addEventListener('change', function () {
+              state.reportFilters.entidade_id = repEnt.value;
+              render();
+            });
+          }
+          var repSt = document.getElementById('rep-status');
+          if (repSt) {
+            repSt.addEventListener('change', function () {
+              state.reportFilters.status = repSt.value;
+              render();
+            });
+          }
+          var repBusca = document.getElementById('rep-busca');
+          if (repBusca) {
+            repBusca.addEventListener('input', function () {
+              var pos = repBusca.selectionStart;
+              state.reportFilters.busca = repBusca.value;
+              render();
+              var el = document.getElementById('rep-busca');
+              if (el) {
+                el.focus();
+                try {
+                  el.setSelectionRange(pos, pos);
+                } catch (e) {}
+              }
+            });
+          }
+          var btnXls = document.getElementById('btn-exp-xls');
+          if (btnXls) {
+            btnXls.addEventListener('click', function () {
+              exportReportExcel(getFilteredReportRows(db));
+            });
+          }
+          var btnCsv = document.getElementById('btn-exp-csv');
+          if (btnCsv) {
+            btnCsv.addEventListener('click', function () {
+              exportReportCsv(getFilteredReportRows(db));
+            });
+          }
+        }
+
+        // ============================================================
+        // INICIALIZAÇÃO + PWA SERVICE WORKER + SINCRONIZAÇÃO CONTÍNUA
+        // ============================================================
+        if (
+          (window.location.protocol === 'http:' || window.location.protocol === 'https:') &&
+          'serviceWorker' in navigator
+        ) {
+          window.addEventListener('load', function () {
+            navigator.serviceWorker.register('./sw.js').catch(function () {});
+          });
+        }
+        window.addEventListener('beforeinstallprompt', function (ev) {
+          ev.preventDefault();
+          state.deferredPrompt = ev;
+          render();
+        });
+        state.route = getRouteFromHash();
+        if (isSupabaseActive()) {
+          syncSupabaseState(true);
+          setInterval(function () {
+            if (isSupabaseActive()) syncSupabaseState(true);
+          }, 3000);
+        }
+        render();
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <meta name="theme-color" content="#0f5132" />
+    <meta
+      name="description"
+      content="PWA de Gestão de Senhas e Atendimentos — Àṣẹ Àlákétú Ilé Iforití • Tenda Espírita Caboclo 7 Flechas"
+    />
+    <link rel="icon" type="image/png" href="%BASE_URL%logo.png" />
+    <link rel="apple-touch-icon" href="%BASE_URL%logo.png" />
+    <title>Àṣẹ Àlákétú Ilé Iforití — Tenda Espírita Caboclo 7 Flechas</title>
+    <script>
+      if (window.location.protocol === 'file:') {
+        window.location.replace('./abrir-local.html');
+      }
+    </script>
+  </head>
+  <body class="bg-slate-50 text-slate-900 antialiased selection:bg-terreiro-200 selection:text-terreiro-900">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
