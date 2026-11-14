@@ -1,6 +1,6 @@
 // Service Worker de fallback offline para o PWA Recepção Iforiti
 // (No build Vite, o vite-plugin-pwa gera o sw.js otimizado com Workbox automaticamente)
-const CACHE_NAME = 'recepcao-iforiti-v2';
+const CACHE_NAME = 'recepcao-iforiti-v3';
 const CORE_ASSETS = ['./', './index.html', './manifest.json', './logo.png'];
 
 self.addEventListener('install', (event) => {

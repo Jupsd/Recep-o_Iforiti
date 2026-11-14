@@ -388,3 +388,4 @@ export function exportarFichaConsulentePDF(params: FichaConsulentePDFParams): vo
 
   abrirDocumentoParaPDF(`Ficha - ${params.nome} - ${TERREIRO_NOME}`, corpo);
 }
+

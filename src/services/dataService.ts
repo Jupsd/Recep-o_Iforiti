@@ -182,6 +182,14 @@ function criarSeedLocal(): LocalDatabase {
         ativo: true,
         criado_em: agora,
       },
+      {
+        id: '2a5a9942-4e76-4464-bd3d-ced7bf7f2483',
+        nome: 'Yalaxé / Administrador',
+        email: 'yalase@terreiro.org',
+        perfil: 'ADMIN',
+        ativo: true,
+        criado_em: agora,
+      },
     ],
     equipe_espiritual: [
       { id: med1, nome: 'Pai João', tipo: 'MEDIUM', ativo: true, criado_em: agora },

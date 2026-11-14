@@ -13,7 +13,9 @@ function construirPerfilFallback(user: {
 }): PerfilAcesso {
   const emailNorm = (user.email || '').trim().toLowerCase();
   const ehAdmin =
-    emailNorm.startsWith('admin') || user.user_metadata?.perfil === 'ADMIN';
+    emailNorm.startsWith('admin') ||
+    emailNorm.startsWith('yalase') ||
+    user.user_metadata?.perfil === 'ADMIN';
   const nomeMeta = user.user_metadata?.nome;
 
   return {
@@ -22,7 +24,7 @@ function construirPerfilFallback(user: {
       typeof nomeMeta === 'string' && nomeMeta.trim()
         ? nomeMeta.trim()
         : ehAdmin
-        ? 'Dirigente / Administrador'
+        ? (emailNorm.startsWith('yalase') ? 'Yalaxé / Administrador' : 'Dirigente / Administrador')
         : 'Cambono de Plantão',
     email: user.email ?? null,
     perfil: ehAdmin ? 'ADMIN' : 'CAMBONO',
@@ -142,8 +144,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  async function signIn(email: string, password: string): Promise<PerfilAcesso> {
-    const emailNorm = email.trim().toLowerCase();
+  async function signIn(emailOuUsuario: string, password: string): Promise<PerfilAcesso> {
+    const raw = emailOuUsuario.trim().toLowerCase();
+    const emailNorm = raw.includes('@') ? raw : `${raw}@terreiro.org`;
 
     if (isSupabaseConfigured && supabase) {
       try {
@@ -186,18 +189,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Modo Local / Demonstração
-    if (password !== '123456') {
-      throw new Error('No modo demonstração local, utilize a senha padrão: 123456');
-    }
-
     const perfis = getLocalSeedProfiles();
     const encontrado = perfis.find(
-      (p) => p.email?.toLowerCase() === emailNorm && p.ativo
+      (p) =>
+        (p.email?.toLowerCase() === emailNorm ||
+          p.email?.toLowerCase().startsWith(raw)) &&
+        p.ativo
     );
     if (!encontrado) {
       throw new Error(
-        'Usuário não encontrado. Utilize admin@terreiro.org ou cambono@terreiro.org.'
+        'Usuário não encontrado. Digite yalase para Administração ou cambono para atendimento.'
       );
+    }
+
+    const senhaValida =
+      (raw === 'yalase' && (password === 'Tana1001' || password === '123456')) ||
+      (raw === 'cambono' && (password === 'iforiti' || password === '123456')) ||
+      (raw === 'admin' && (password === '123456' || password === 'Tana1001')) ||
+      password === '123456';
+
+    if (!senhaValida) {
+      throw new Error('Senha incorreta. Verifique suas credenciais.');
     }
 
     localStorage.setItem(LOCAL_AUTH_KEY, JSON.stringify(encontrado));

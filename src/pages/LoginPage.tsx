@@ -28,7 +28,7 @@ export function LoginPage() {
   const location = useLocation();
   const rotaOrigem = (location.state as { from?: string } | null)?.from;
 
-  const [email, setEmail] = useState('');
+  const [identificador, setIdentificador] = useState('');
   const [password, setPassword] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [limpandoCache, setLimpandoCache] = useState(false);
@@ -50,14 +50,14 @@ export function LoginPage() {
     setErro(null);
     setCarregando(true);
     try {
-      const logado = await signIn(email, password);
+      const logado = await signIn(identificador, password);
       const alvo =
         rotaOrigem && rotaOrigem !== '/login'
           ? rotaOrigem
           : getDestinoPadrao(logado.perfil);
       navigate(alvo, { replace: true });
     } catch (err) {
-      setErro(extrairMensagemErro(err, 'Falha ao entrar. Verifique suas credenciais.'));
+      setErro(extrairMensagemErro(err, 'Falha ao entrar. Verifique seu usuário e senha.'));
     } finally {
       setCarregando(false);
     }
@@ -133,21 +133,26 @@ export function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label
-                htmlFor="login-email"
+                htmlFor="login-usuario"
                 className="block text-sm font-bold text-slate-800 mb-1.5"
               >
-                E-mail
+                Usuário
               </label>
               <input
-                id="login-email"
-                type="email"
+                id="login-usuario"
+                type="text"
                 required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
+                autoCapitalize="none"
+                autoCorrect="off"
+                autoComplete="username"
+                value={identificador}
+                onChange={(e) => setIdentificador(e.target.value)}
+                placeholder="yalase ou cambono"
                 className="w-full min-h-[48px] px-4 rounded-xl border-2 border-slate-300 text-base text-slate-900 focus:border-terreiro-600 focus:outline-none transition"
               />
+              <p className="text-xs text-slate-500 mt-1">
+                Digite <strong>yalase</strong> para Administração ou <strong>cambono</strong> para atendimento (não precisa digitar @).
+              </p>
             </div>
 
             <div>
