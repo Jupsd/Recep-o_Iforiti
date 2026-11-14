@@ -6,12 +6,14 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  FileText,
   Loader2,
   LogOut,
   MessageCircle,
   Play,
   Plus,
   RotateCcw,
+  Search,
   Settings,
   Shield,
   Star,
@@ -20,6 +22,7 @@ import {
   VolumeX,
   X,
 } from 'lucide-react';
+import { FichaConsulenteModal } from '../components/FichaConsulenteModal';
 import { useAuth } from '../contexts/AuthContext';
 import {
   extrairMensagemErro,
@@ -60,6 +63,8 @@ export function PainelCambonoPage() {
 
   const [historicoAberto, setHistoricoAberto] = useState(false);
   const [acaoEmAndamentoId, setAcaoEmAndamentoId] = useState<string | null>(null);
+  const [buscaFila, setBuscaFila] = useState('');
+  const [atendimentoFicha, setAtendimentoFicha] = useState<Atendimento | null>(null);
 
   // Modal Ausência (RF10)
   const [atendimentoAusencia, setAtendimentoAusencia] = useState<Atendimento | null>(null);
@@ -70,6 +75,7 @@ export function PainelCambonoPage() {
   const [manualTelefone, setManualTelefone] = useState('');
   const [manualPrimeiraVez, setManualPrimeiraVez] = useState(false);
   const [manualEscalaId, setManualEscalaId] = useState('');
+  const [manualOrientacoes, setManualOrientacoes] = useState('');
   const [salvandoManual, setSalvandoManual] = useState(false);
   const [erroManual, setErroManual] = useState<string | null>(null);
   const [feedbackManual, setFeedbackManual] = useState<string | null>(null);
@@ -127,29 +133,57 @@ export function PainelCambonoPage() {
     [atendimentos, escalaAtivaId]
   );
 
+  const filtrarPorBusca = useCallback(
+    (lista: Atendimento[]) => {
+      const termo = buscaFila.trim().toLowerCase();
+      if (!termo) return lista;
+      const digitos = limparDigitos(termo);
+      return lista.filter((a) => {
+        const senhaFmt = formatarSenha(a.numero_senha).toLowerCase();
+        return (
+          a.consulente_nome.toLowerCase().includes(termo) ||
+          (a.orientacoes ?? '').toLowerCase().includes(termo) ||
+          senhaFmt.includes(termo) ||
+          String(a.numero_senha) === termo ||
+          (a.consulente_telefone ?? '').toLowerCase().includes(termo) ||
+          (digitos.length >= 2 && limparDigitos(a.consulente_telefone ?? '').includes(digitos))
+        );
+      });
+    },
+    [buscaFila]
+  );
+
   const emAtendimento = useMemo(
-    () => atendimentosEscala.filter((a) => a.status === 'EM_ATENDIMENTO'),
+    () => filtrarPorBusca(atendimentosEscala.filter((a) => a.status === 'EM_ATENDIMENTO')),
+    [atendimentosEscala, filtrarPorBusca]
+  );
+
+  const aguardandoTotal = useMemo(
+    () => atendimentosEscala.filter((a) => a.status === 'AGUARDANDO'),
     [atendimentosEscala]
   );
 
   const aguardando = useMemo(
     () =>
-      atendimentosEscala
-        .filter((a) => a.status === 'AGUARDANDO')
-        .sort((a, b) => a.numero_senha - b.numero_senha),
+      filtrarPorBusca(aguardandoTotal).sort((a, b) => a.numero_senha - b.numero_senha),
+    [aguardandoTotal, filtrarPorBusca]
+  );
+
+  const finalizadosTotal = useMemo(
+    () =>
+      atendimentosEscala.filter(
+        (a) => a.status === 'ATENDIDO' || a.status === 'AUSENTE' || a.status === 'NAO_ATENDIDO'
+      ),
     [atendimentosEscala]
   );
 
   const finalizados = useMemo(
-    () =>
-      atendimentosEscala
-        .filter((a) => a.status === 'ATENDIDO' || a.status === 'AUSENTE' || a.status === 'NAO_ATENDIDO')
-        .sort((a, b) => b.numero_senha - a.numero_senha),
-    [atendimentosEscala]
+    () => filtrarPorBusca(finalizadosTotal).sort((a, b) => b.numero_senha - a.numero_senha),
+    [finalizadosTotal, filtrarPorBusca]
   );
 
-  const totalAtendidos = finalizados.filter((a) => a.status === 'ATENDIDO').length;
-  const totalAusentes = finalizados.filter((a) => a.status === 'AUSENTE').length;
+  const totalAtendidos = finalizadosTotal.filter((a) => a.status === 'ATENDIDO').length;
+  const totalAusentes = finalizadosTotal.filter((a) => a.status === 'AUSENTE').length;
 
   async function handleChamar(item: Atendimento) {
     setAcaoEmAndamentoId(item.id);
@@ -208,6 +242,7 @@ export function PainelCambonoPage() {
     setManualNome('');
     setManualTelefone('');
     setManualPrimeiraVez(false);
+    setManualOrientacoes('');
     setManualEscalaId(escalaAtivaId || escalas[0]?.escala_id || '');
     setErroManual(null);
     setModalManualAberto(true);
@@ -233,6 +268,7 @@ export function PainelCambonoPage() {
         telefone: manualTelefone || undefined,
         primeiraVez: manualPrimeiraVez,
         origem: 'MANUAL',
+        orientacoes: manualOrientacoes.trim() || undefined,
       });
       setModalManualAberto(false);
       setEscalaAtivaId(manualEscalaId);
@@ -447,7 +483,7 @@ export function PainelCambonoPage() {
                         Na fila
                       </span>
                       <span className="text-base font-black text-sky-900">
-                        {aguardando.length}
+                        {aguardandoTotal.length}
                       </span>
                     </div>
                     <button
@@ -461,6 +497,26 @@ export function PainelCambonoPage() {
                   </div>
                 )}
               </div>
+
+              <div className="relative pt-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-4" />
+                <input
+                  type="text"
+                  value={buscaFila}
+                  onChange={(e) => setBuscaFila(e.target.value)}
+                  placeholder="Buscar consulente rápido (nome, senha, telefone ou orientação)..."
+                  className="w-full min-h-[42px] pl-10 pr-20 rounded-xl border border-slate-300 bg-slate-50 focus:bg-white text-sm text-slate-900 focus:border-terreiro-600 focus:outline-none transition"
+                />
+                {buscaFila.trim() && (
+                  <button
+                    type="button"
+                    onClick={() => setBuscaFila('')}
+                    className="absolute right-2.5 top-2.5 px-2.5 py-1 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold"
+                  >
+                    Limpar
+                  </button>
+                )}
+              </div>
             </section>
 
             {/* Bloco A: Em Atendimento Agora */}
@@ -471,7 +527,9 @@ export function PainelCambonoPage() {
 
               {emAtendimento.length === 0 ? (
                 <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-5 text-center text-sm text-slate-500">
-                  Nenhum consulente em atendimento no momento. Chame o próximo da fila abaixo.
+                  {buscaFila.trim()
+                    ? 'Nenhum consulente em atendimento corresponde à busca.'
+                    : 'Nenhum consulente em atendimento no momento. Chame o próximo da fila abaixo.'}
                 </div>
               ) : (
                 emAtendimento.map((item) => (
@@ -499,7 +557,25 @@ export function PainelCambonoPage() {
                           </p>
                         </div>
                       </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setAtendimentoFicha(item)}
+                        className="min-h-[40px] px-3.5 rounded-xl bg-white hover:bg-emerald-100 border border-emerald-300 text-emerald-900 font-bold text-xs inline-flex items-center gap-1.5 shadow-sm transition"
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>Ficha / Orientações</span>
+                      </button>
                     </div>
+
+                    {item.orientacoes && (
+                      <div className="bg-white/90 border border-emerald-200 rounded-xl p-3 text-xs text-slate-800 whitespace-pre-line">
+                        <span className="font-extrabold text-emerald-900 uppercase block mb-0.5">
+                          Orientações registradas:
+                        </span>
+                        {item.orientacoes}
+                      </div>
+                    )}
 
                     <button
                       type="button"
@@ -527,7 +603,9 @@ export function PainelCambonoPage() {
 
               {aguardando.length === 0 ? (
                 <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center text-sm text-slate-500">
-                  Não há ninguém aguardando nesta fila no momento.
+                  {buscaFila.trim()
+                    ? 'Ninguém aguardando corresponde à busca.'
+                    : 'Não há ninguém aguardando nesta fila no momento.'}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -562,19 +640,37 @@ export function PainelCambonoPage() {
                             </div>
                           </div>
 
-                          {digitosTel.length >= 10 && (
-                            <a
-                              href={`https://wa.me/55${digitosTel}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold hover:bg-emerald-100"
-                              title="Chamar no WhatsApp"
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setAtendimentoFicha(item)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-terreiro-50 text-terreiro-800 border border-terreiro-200 text-xs font-bold hover:bg-terreiro-100 transition"
                             >
-                              <MessageCircle className="w-3.5 h-3.5" />
-                              <span>WhatsApp</span>
-                            </a>
-                          )}
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>Ficha / Orientações</span>
+                            </button>
+
+                            {digitosTel.length >= 10 && (
+                              <a
+                                href={`https://wa.me/55${digitosTel}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold hover:bg-emerald-100"
+                                title="Chamar no WhatsApp"
+                              >
+                                <MessageCircle className="w-3.5 h-3.5" />
+                                <span>WhatsApp</span>
+                              </a>
+                            )}
+                          </div>
                         </div>
+
+                        {item.orientacoes && (
+                          <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-700 whitespace-pre-line">
+                            <span className="font-bold text-slate-900">Orientações: </span>
+                            {item.orientacoes}
+                          </div>
+                        )}
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           <button
@@ -614,54 +710,76 @@ export function PainelCambonoPage() {
                 <span>
                   Ver Já Atendidos ({totalAtendidos}) / Ausentes ({totalAusentes})
                 </span>
-                {historicoAberto ? (
+                {historicoAberto || buscaFila.trim() ? (
                   <ChevronUp className="w-5 h-5" />
                 ) : (
                   <ChevronDown className="w-5 h-5" />
                 )}
               </button>
 
-              {historicoAberto && (
+              {(historicoAberto || buscaFila.trim().length > 0) && (
                 <div className="border-t border-slate-200 divide-y divide-slate-100">
                   {finalizados.length === 0 ? (
                     <p className="p-4 text-sm text-slate-500 text-center">
-                      Nenhum atendimento concluído ou marcado como ausente ainda.
+                      {buscaFila.trim()
+                        ? 'Nenhum atendimento finalizado encontrado para esta busca.'
+                        : 'Nenhum atendimento concluído ou marcado como ausente ainda.'}
                     </p>
                   ) : (
                     finalizados.map((item) => (
                       <div
                         key={item.id}
-                        className="p-3.5 flex flex-wrap items-center justify-between gap-2 text-sm"
+                        className="p-3.5 space-y-2 text-sm"
                       >
-                        <div>
-                          <span className="font-black text-slate-700 mr-2">
-                            {formatarSenha(item.numero_senha)}
-                          </span>
-                          <span className="font-semibold text-slate-900">
-                            {item.consulente_nome}
-                          </span>
-                          <span
-                            className={`ml-2 text-xs font-bold px-2 py-0.5 rounded-full ${
-                              item.status === 'ATENDIDO'
-                                ? 'bg-terreiro-100 text-terreiro-800'
-                                : 'bg-amber-100 text-amber-800'
-                            }`}
-                          >
-                            {item.status === 'ATENDIDO'
-                              ? `Atendido às ${formatarHoraBR(item.hora_atendimento)}`
-                              : 'Ausente'}
-                          </span>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <span className="font-black text-slate-700 mr-2">
+                              {formatarSenha(item.numero_senha)}
+                            </span>
+                            <span className="font-semibold text-slate-900">
+                              {item.consulente_nome}
+                            </span>
+                            <span
+                              className={`ml-2 text-xs font-bold px-2 py-0.5 rounded-full ${
+                                item.status === 'ATENDIDO'
+                                  ? 'bg-terreiro-100 text-terreiro-800'
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}
+                            >
+                              {item.status === 'ATENDIDO'
+                                ? `Atendido às ${formatarHoraBR(item.hora_atendimento)}`
+                                : 'Ausente'}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setAtendimentoFicha(item)}
+                              className="px-3 py-1.5 rounded-lg border border-terreiro-200 bg-terreiro-50 text-xs font-bold text-terreiro-800 hover:bg-terreiro-100 inline-flex items-center gap-1"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>Ficha / Orientações</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              disabled={acaoEmAndamentoId === item.id}
+                              onClick={() => handleRestaurar(item)}
+                              className="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 inline-flex items-center gap-1"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                              <span>Voltar p/ Fila</span>
+                            </button>
+                          </div>
                         </div>
 
-                        <button
-                          type="button"
-                          disabled={acaoEmAndamentoId === item.id}
-                          onClick={() => handleRestaurar(item)}
-                          className="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 inline-flex items-center gap-1"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          <span>Voltar p/ Fila</span>
-                        </button>
+                        {item.orientacoes && (
+                          <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs text-slate-700 whitespace-pre-line">
+                            <span className="font-bold text-slate-900">Orientações: </span>
+                            {item.orientacoes}
+                          </div>
+                        )}
                       </div>
                     ))
                   )}
@@ -816,6 +934,19 @@ export function PainelCambonoPage() {
                 </span>
               </label>
 
+              <div>
+                <label className="block text-sm font-bold text-slate-800 mb-1">
+                  Orientações / Observações do Cliente (Opcional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={manualOrientacoes}
+                  onChange={(e) => setManualOrientacoes(e.target.value)}
+                  placeholder="Anotações iniciais ou orientações para o cadastro..."
+                  className="w-full p-3 rounded-xl border-2 border-slate-300 text-sm focus:border-terreiro-600 focus:outline-none resize-y"
+                />
+              </div>
+
               {erroManual && (
                 <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl p-3 font-medium">
                   {erroManual}
@@ -917,6 +1048,20 @@ export function PainelCambonoPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Modal Ficha e Orientações do Consulente */}
+      {atendimentoFicha && (
+        <FichaConsulenteModal
+          atendimento={atendimentoFicha}
+          nomeEntidade={escalaSelecionada?.nome_entidade}
+          mediumNome={escalaSelecionada?.medium_nome}
+          cambonoNome={escalaSelecionada?.cambono_nome}
+          giraTitulo={escalas[0]?.gira_titulo}
+          dataGira={escalas[0]?.data_gira}
+          onClose={() => setAtendimentoFicha(null)}
+          onSalvo={carregarDados}
+        />
       )}
     </div>
   );

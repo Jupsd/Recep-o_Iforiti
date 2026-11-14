@@ -92,7 +92,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           </NavLink>
           <NavLink to="/admin/relatorios" className={navClass}>
             <BarChart3 className="w-4 h-4" />
-            <span>Relatórios & Excel</span>
+            <span>Busca, Histórico & Relatórios</span>
           </NavLink>
         </nav>
       </header>

@@ -24,6 +24,101 @@ import type {
 
 const LOCAL_DB_KEY = 'iforiti_local_db_v2';
 const BROADCAST_CHANNEL_NAME = 'iforiti_realtime_v1';
+const ORIENTACOES_CACHE_KEY = 'iforiti_orientacoes_v1';
+const SEPARADOR_ORIENTACAO = ' || ';
+
+function lerCacheOrientacoes(): Record<string, string> {
+  try {
+    if (typeof window === 'undefined') return {};
+    const raw = localStorage.getItem(ORIENTACOES_CACHE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, string>;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function salvarCacheOrientacao(atendimentoId: string, orientacoes?: string | null): void {
+  try {
+    if (typeof window === 'undefined') return;
+    const cache = lerCacheOrientacoes();
+    const texto = orientacoes?.trim() || '';
+    if (texto) {
+      cache[atendimentoId] = texto;
+    } else {
+      delete cache[atendimentoId];
+    }
+    localStorage.setItem(ORIENTACOES_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // Ignore storage quota errors
+  }
+}
+
+function separarNomeEOrientacoes(
+  nomeBruto: string,
+  orientacoesColuna?: string | null,
+  cacheTexto?: string
+): { nome: string; orientacoes: string | null } {
+  const textoBruto = nomeBruto || '';
+  const idx = textoBruto.indexOf(SEPARADOR_ORIENTACAO);
+  let nomeLimpo = textoBruto.trim();
+  let orientacaoEmbutida = '';
+
+  if (idx >= 0) {
+    nomeLimpo = textoBruto.slice(0, idx).trim() || nomeLimpo;
+    orientacaoEmbutida = textoBruto.slice(idx + SEPARADOR_ORIENTACAO.length).trim();
+  }
+
+  const colTexto = orientacoesColuna?.trim() || '';
+  const cached = cacheTexto?.trim() || '';
+
+  let orientacaoFinal = '';
+  if (colTexto) {
+    orientacaoFinal = colTexto;
+  } else if (orientacaoEmbutida) {
+    orientacaoFinal =
+      cached && cached.startsWith(orientacaoEmbutida) ? cached : orientacaoEmbutida;
+  } else {
+    orientacaoFinal = cached;
+  }
+
+  return {
+    nome: nomeLimpo,
+    orientacoes: orientacaoFinal || null,
+  };
+}
+
+function combinarNomeEOrientacoesFallback(nome: string, orientacoes?: string | null): string {
+  const nomeLimpo = nome.replace(/\s*\|\|\s*/g, ' - ').trim().slice(0, 150);
+  const texto = orientacoes?.trim() || '';
+  if (!texto) return nomeLimpo;
+
+  const espacoDisponivel = 150 - nomeLimpo.length - SEPARADOR_ORIENTACAO.length;
+  if (espacoDisponivel <= 4) {
+    const nomeCurto = nomeLimpo.slice(0, 80).trim();
+    const resto = Math.max(0, 150 - nomeCurto.length - SEPARADOR_ORIENTACAO.length);
+    return `${nomeCurto}${SEPARADOR_ORIENTACAO}${texto.slice(0, resto)}`.slice(0, 150);
+  }
+
+  return `${nomeLimpo}${SEPARADOR_ORIENTACAO}${texto.slice(0, espacoDisponivel)}`.slice(0, 150);
+}
+
+function normalizarAtendimento(
+  row: Atendimento,
+  cache: Record<string, string> = lerCacheOrientacoes()
+): Atendimento {
+  const { nome, orientacoes } = separarNomeEOrientacoes(
+    row.consulente_nome,
+    row.orientacoes,
+    cache[row.id]
+  );
+  return {
+    ...row,
+    consulente_nome: nome,
+    orientacoes,
+  };
+}
 
 interface LocalDatabase {
   perfis_acesso: PerfilAcesso[];
@@ -225,24 +320,51 @@ export async function gerarSenhaConsulente(params: {
   telefone?: string;
   primeiraVez: boolean;
   origem?: OrigemCheckin;
+  orientacoes?: string;
 }): Promise<ComprovanteSenha> {
   const origem: OrigemCheckin = params.origem ?? 'QRCODE';
+  const nomeSanitizado = params.nome.replace(/\s*\|\|\s*/g, ' - ').trim();
+  const orientacoesSanitizadas = params.orientacoes?.trim() || null;
 
   if (isSupabaseConfigured && supabase) {
     const { data, error } = await supabase.rpc('gerar_senha_consulente', {
       p_escala_id: params.escalaId,
-      p_nome: params.nome.trim(),
+      p_nome: nomeSanitizado,
       p_telefone: params.telefone?.trim() || null,
       p_primeira_vez: params.primeiraVez,
       p_origem: origem,
     });
 
     if (error) throw error;
-    const row = Array.isArray(data) ? data[0] : data;
-    if (!row) {
+    const rawRow = (Array.isArray(data) ? data[0] : data) as ComprovanteSenha | undefined;
+    if (!rawRow) {
       throw new Error('Não foi possível gerar a senha. Tente novamente.');
     }
-    return row as ComprovanteSenha;
+
+    const cache = lerCacheOrientacoes();
+    const { nome, orientacoes } = separarNomeEOrientacoes(
+      rawRow.consulente_nome,
+      rawRow.orientacoes,
+      cache[rawRow.atendimento_id]
+    );
+    const comprovante: ComprovanteSenha = {
+      ...rawRow,
+      consulente_nome: nome,
+      orientacoes,
+    };
+
+    if (orientacoesSanitizadas) {
+      await salvarFichaConsulente({
+        atendimentoId: comprovante.atendimento_id,
+        nome: comprovante.consulente_nome,
+        telefone: comprovante.consulente_telefone,
+        primeiraVez: comprovante.primeira_vez,
+        orientacoes: orientacoesSanitizadas,
+      });
+      comprovante.orientacoes = orientacoesSanitizadas;
+    }
+
+    return comprovante;
   }
 
   const db = lerLocalDb();
@@ -275,6 +397,7 @@ export async function gerarSenhaConsulente(params: {
         consulente_nome: existente.consulente_nome,
         consulente_telefone: existente.consulente_telefone,
         primeira_vez: existente.primeira_vez,
+        orientacoes: existente.orientacoes ?? null,
         origem: existente.origem,
         gira_titulo: gira.titulo,
         data_gira: gira.data_gira,
@@ -302,9 +425,10 @@ export async function gerarSenhaConsulente(params: {
     gira_id: gira.id,
     escala_id: escala.id,
     numero_senha: maxNumero + 1,
-    consulente_nome: params.nome.trim(),
+    consulente_nome: nomeSanitizado,
     consulente_telefone: params.telefone?.trim() || null,
     primeira_vez: params.primeiraVez,
+    orientacoes: orientacoesSanitizadas,
     status: 'AGUARDANDO',
     origem,
     criado_em: new Date().toISOString(),
@@ -314,6 +438,9 @@ export async function gerarSenhaConsulente(params: {
 
   db.atendimentos.push(novo);
   salvarLocalDb(db);
+  if (orientacoesSanitizadas) {
+    salvarCacheOrientacao(novo.id, orientacoesSanitizadas);
+  }
 
   return {
     atendimento_id: novo.id,
@@ -324,6 +451,7 @@ export async function gerarSenhaConsulente(params: {
     consulente_nome: novo.consulente_nome,
     consulente_telefone: novo.consulente_telefone,
     primeira_vez: novo.primeira_vez,
+    orientacoes: novo.orientacoes ?? null,
     origem: novo.origem,
     gira_titulo: gira.titulo,
     data_gira: gira.data_gira,
@@ -430,6 +558,7 @@ export function subscribeAtendimento(
 // ============================================================================
 
 export async function getAtendimentosGiraAberta(): Promise<Atendimento[]> {
+  const cache = lerCacheOrientacoes();
   if (isSupabaseConfigured && supabase) {
     const { data: giraAberta, error: giraErr } = await supabase
       .from('giras')
@@ -447,7 +576,7 @@ export async function getAtendimentosGiraAberta(): Promise<Atendimento[]> {
       .order('numero_senha', { ascending: true });
 
     if (error) throw error;
-    return (data ?? []) as Atendimento[];
+    return ((data ?? []) as Atendimento[]).map((row) => normalizarAtendimento(row, cache));
   }
 
   const db = lerLocalDb();
@@ -455,7 +584,73 @@ export async function getAtendimentosGiraAberta(): Promise<Atendimento[]> {
   if (!giraAberta) return [];
   return db.atendimentos
     .filter((a) => a.gira_id === giraAberta.id)
-    .sort((a, b) => a.numero_senha - b.numero_senha);
+    .sort((a, b) => a.numero_senha - b.numero_senha)
+    .map((row) => normalizarAtendimento(row, cache));
+}
+
+export async function salvarFichaConsulente(params: {
+  atendimentoId: string;
+  nome: string;
+  telefone?: string | null;
+  primeiraVez: boolean;
+  orientacoes?: string | null;
+}): Promise<void> {
+  const nomeLimpo = params.nome.replace(/\s*\|\|\s*/g, ' - ').trim();
+  if (!nomeLimpo) {
+    throw new Error('NOME_OBRIGATORIO');
+  }
+  const telLimpo = params.telefone?.trim() || null;
+  const orientacoesLimpas = params.orientacoes?.trim() || null;
+
+  salvarCacheOrientacao(params.atendimentoId, orientacoesLimpas);
+
+  if (isSupabaseConfigured && supabase) {
+    const { error } = await supabase
+      .from('atendimentos')
+      .update({
+        consulente_nome: nomeLimpo,
+        consulente_telefone: telLimpo,
+        primeira_vez: params.primeiraVez,
+        orientacoes: orientacoesLimpas,
+      })
+      .eq('id', params.atendimentoId);
+
+    if (!error) return;
+
+    const msg = `${error.message || ''} ${error.details || ''}`.toLowerCase();
+    const erroColunaOrientacoes =
+      msg.includes('orientacoes') || error.code === 'PGRST204' || error.code === '42703';
+
+    if (!erroColunaOrientacoes) {
+      throw error;
+    }
+
+    const nomeFallback = combinarNomeEOrientacoesFallback(nomeLimpo, orientacoesLimpas);
+    const { error: fallbackErr } = await supabase
+      .from('atendimentos')
+      .update({
+        consulente_nome: nomeFallback,
+        consulente_telefone: telLimpo,
+        primeira_vez: params.primeiraVez,
+      })
+      .eq('id', params.atendimentoId);
+
+    if (fallbackErr) throw fallbackErr;
+    return;
+  }
+
+  const db = lerLocalDb();
+  const idx = db.atendimentos.findIndex((a) => a.id === params.atendimentoId);
+  if (idx >= 0) {
+    db.atendimentos[idx] = {
+      ...db.atendimentos[idx],
+      consulente_nome: nomeLimpo,
+      consulente_telefone: telLimpo,
+      primeira_vez: params.primeiraVez,
+      orientacoes: orientacoesLimpas,
+    };
+    salvarLocalDb(db);
+  }
 }
 
 export async function chamarConsulente(atendimentoId: string): Promise<void> {
@@ -893,11 +1088,28 @@ export async function alternarMembroAtivo(id: string, ativo: boolean): Promise<v
   salvarLocalDb(db);
 }
 
-// --- Relatórios Gerenciais ---
+// --- Relatórios Gerenciais e Histórico ---
+
+export async function listarGiras(): Promise<Gira[]> {
+  if (isSupabaseConfigured && supabase) {
+    const { data, error } = await supabase
+      .from('giras')
+      .select('*')
+      .order('data_gira', { ascending: false })
+      .order('aberta_em', { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as Gira[];
+  }
+
+  return [...lerLocalDb().giras].sort(
+    (a, b) => b.data_gira.localeCompare(a.data_gira) || b.aberta_em.localeCompare(a.aberta_em)
+  );
+}
 
 export async function consultarRelatorioAtendimentos(
   filtros: FiltroRelatorio
 ): Promise<AtendimentoDetalhado[]> {
+  const cache = lerCacheOrientacoes();
   let giras: Gira[] = [];
   let escalas: GiraEscala[] = [];
   let entidades: Entidade[] = [];
@@ -927,16 +1139,18 @@ export async function consultarRelatorioAtendimentos(
     escalas = (geRes.data ?? []) as GiraEscala[];
     entidades = (eRes.data ?? []) as Entidade[];
     equipe = (eqRes.data ?? []) as EquipeEspiritual[];
-    atendimentos = (aRes.data ?? []) as Atendimento[];
+    atendimentos = ((aRes.data ?? []) as Atendimento[]).map((row) =>
+      normalizarAtendimento(row, cache)
+    );
   } else {
     const db = lerLocalDb();
     giras = db.giras;
     escalas = db.gira_escalas;
     entidades = db.entidades;
     equipe = db.equipe_espiritual;
-    atendimentos = [...db.atendimentos].sort((a, b) =>
-      b.criado_em.localeCompare(a.criado_em)
-    );
+    atendimentos = [...db.atendimentos]
+      .sort((a, b) => b.criado_em.localeCompare(a.criado_em))
+      .map((row) => normalizarAtendimento(row, cache));
   }
 
   const giraMap = new Map(giras.map((g) => [g.id, g]));
@@ -960,6 +1174,7 @@ export async function consultarRelatorioAtendimentos(
       linha: entidade?.linha ?? null,
       medium_id: escala?.medium_id ?? '',
       medium_nome: medium?.nome ?? 'Médium',
+      cambono_id: escala?.cambono_id ?? null,
       cambono_nome: cambono?.nome ?? null,
     };
   });
@@ -968,20 +1183,65 @@ export async function consultarRelatorioAtendimentos(
   const termoDigitos = limparDigitos(termo);
 
   return detalhados.filter((item) => {
+    if (filtros.gira_id && item.gira_id !== filtros.gira_id) return false;
     if (filtros.data_inicial && item.data_gira < filtros.data_inicial) return false;
     if (filtros.data_final && item.data_gira > filtros.data_final) return false;
     if (filtros.entidade_id && item.entidade_id !== filtros.entidade_id) return false;
     if (filtros.medium_id && item.medium_id !== filtros.medium_id) return false;
+    if (filtros.cambono_id && item.cambono_id !== filtros.cambono_id) return false;
     if (filtros.status && item.status !== filtros.status) return false;
+    if (filtros.apenas_atendidos && item.status !== 'ATENDIDO') return false;
+    if (filtros.apenas_com_orientacoes && !item.orientacoes?.trim()) return false;
+    if (filtros.apenas_primeira_vez && !item.primeira_vez) return false;
     if (termo) {
+      const senhaFmt = `#${String(item.numero_senha).padStart(2, '0')}`;
       const bateNome = item.consulente_nome.toLowerCase().includes(termo);
       const bateTel =
         item.consulente_telefone?.toLowerCase().includes(termo) ||
-        (termoDigitos.length > 0 &&
+        (termoDigitos.length >= 2 &&
           limparDigitos(item.consulente_telefone ?? '').includes(termoDigitos));
-      if (!bateNome && !bateTel) return false;
+      const bateOrientacoes = (item.orientacoes ?? '').toLowerCase().includes(termo);
+      const bateEntidade = item.nome_entidade.toLowerCase().includes(termo);
+      const bateMedium = item.medium_nome.toLowerCase().includes(termo);
+      const bateCambono = (item.cambono_nome ?? '').toLowerCase().includes(termo);
+      const bateGira = item.gira_titulo.toLowerCase().includes(termo);
+      const bateSenha =
+        senhaFmt.includes(termo) || String(item.numero_senha) === termo;
+      if (
+        !bateNome &&
+        !bateTel &&
+        !bateOrientacoes &&
+        !bateEntidade &&
+        !bateMedium &&
+        !bateCambono &&
+        !bateGira &&
+        !bateSenha
+      ) {
+        return false;
+      }
     }
     return true;
+  });
+}
+
+export async function buscarHistoricoConsulente(params: {
+  telefone?: string | null;
+  nome: string;
+  ignorarAtendimentoId?: string;
+}): Promise<AtendimentoDetalhado[]> {
+  const todos = await consultarRelatorioAtendimentos({});
+  const telAlvo = limparDigitos(params.telefone ?? '');
+  const nomeAlvo = params.nome.trim().toLowerCase();
+
+  return todos.filter((item) => {
+    if (params.ignorarAtendimentoId && item.id === params.ignorarAtendimentoId) {
+      return false;
+    }
+    const telItem = limparDigitos(item.consulente_telefone ?? '');
+    const bateTel = telAlvo.length >= 8 && telItem.length >= 8 && telItem === telAlvo;
+    const bateNome =
+      nomeAlvo.length >= 3 && item.consulente_nome.trim().toLowerCase() === nomeAlvo;
+    return bateTel || bateNome;
   });
 }
 

@@ -62,6 +62,7 @@ export interface Atendimento {
   consulente_nome: string;
   consulente_telefone: string | null;
   primeira_vez: boolean;
+  orientacoes?: string | null;
   status: StatusAtendimento;
   origem: OrigemCheckin;
   criado_em: string;
@@ -101,6 +102,7 @@ export interface ComprovanteSenha {
   consulente_nome: string;
   consulente_telefone: string | null;
   primeira_vez: boolean;
+  orientacoes?: string | null;
   origem: OrigemCheckin;
   gira_titulo: string;
   data_gira: string;
@@ -119,6 +121,7 @@ export interface AtendimentoDetalhado extends Atendimento {
   linha: string | null;
   medium_id: string;
   medium_nome: string;
+  cambono_id: string | null;
   cambono_nome: string | null;
 }
 
@@ -130,11 +133,16 @@ export interface EscalaNovaInput {
 }
 
 export interface FiltroRelatorio {
+  gira_id?: string;
   data_inicial?: string;
   data_final?: string;
   entidade_id?: string;
   medium_id?: string;
+  cambono_id?: string;
   status?: StatusAtendimento | '';
   busca?: string;
+  apenas_com_orientacoes?: boolean;
+  apenas_atendidos?: boolean;
+  apenas_primeira_vez?: boolean;
 }
 

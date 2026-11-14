@@ -98,12 +98,15 @@ CREATE TABLE IF NOT EXISTS atendimentos (
   consulente_nome VARCHAR(150) NOT NULL,
   consulente_telefone VARCHAR(30),
   primeira_vez BOOLEAN NOT NULL DEFAULT FALSE,
+  orientacoes TEXT,
   status status_atendimento NOT NULL DEFAULT 'AGUARDANDO',
   origem VARCHAR(20) NOT NULL DEFAULT 'QRCODE' CHECK (origem IN ('QRCODE', 'MANUAL')),
   criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   chamado_em TIMESTAMPTZ,
   hora_atendimento TIMESTAMPTZ
 );
+
+ALTER TABLE atendimentos ADD COLUMN IF NOT EXISTS orientacoes TEXT;
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_atendimento_escala_numero
   ON atendimentos (escala_id, numero_senha);
