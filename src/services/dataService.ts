@@ -829,6 +829,27 @@ export async function salvarFichaConsulente(params: {
   }
 }
 
+export async function excluirAtendimento(atendimentoId: string): Promise<void> {
+  salvarCacheOrientacao(atendimentoId, null);
+
+  if (isSupabaseConfigured && supabase) {
+    const { error } = await supabase
+      .from('atendimentos')
+      .delete()
+      .eq('id', atendimentoId);
+
+    if (error) {
+      throw new Error(`Falha ao excluir atendimento: ${error.message}`);
+    }
+    return;
+  }
+
+  const db = lerLocalDb();
+  db.atendimentos = db.atendimentos.filter((a) => a.id !== atendimentoId);
+  salvarLocalDb(db);
+  notificarMudancaLocal();
+}
+
 export async function chamarConsulente(atendimentoId: string): Promise<void> {
   const agora = new Date().toISOString();
   if (isSupabaseConfigured && supabase) {

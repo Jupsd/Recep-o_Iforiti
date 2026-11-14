@@ -7,9 +7,11 @@ import {
   Loader2,
   MessageCircle,
   Sparkles,
+  Trash2,
   UserCheck,
   X,
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import {
   extrairMensagemErro,
   formatarDataBR,
@@ -22,6 +24,7 @@ import {
 import { exportarFichaConsulentePDF } from '../lib/pdfExport';
 import {
   buscarHistoricoConsulente,
+  excluirAtendimento,
   salvarFichaConsulente,
 } from '../services/dataService';
 import type { Atendimento, AtendimentoDetalhado } from '../types/database';
@@ -70,16 +73,41 @@ export function FichaConsulenteModal({
   onClose,
   onSalvo,
 }: FichaConsulenteModalProps) {
+  const { perfil } = useAuth();
+  const isAdmin = perfil?.perfil === 'ADMIN';
+
   const [nome, setNome] = useState(atendimento.consulente_nome);
   const [telefone, setTelefone] = useState(atendimento.consulente_telefone ?? '');
   const [primeiraVez, setPrimeiraVez] = useState(atendimento.primeira_vez);
   const [orientacoes, setOrientacoes] = useState(atendimento.orientacoes ?? '');
 
   const [salvando, setSalvando] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   const [historico, setHistorico] = useState<AtendimentoDetalhado[]>([]);
   const [carregandoHistorico, setCarregandoHistorico] = useState(true);
+
+  async function handleExcluir() {
+    if (
+      !window.confirm(
+        `Tem certeza que deseja excluir permanentemente a ficha de atendimento de "${atendimento.consulente_nome}" (Senha ${formatarSenha(atendimento.numero_senha)})?\n\nEsta ação apagará a ficha e o registro do atendimento e não poderá ser desfeita.`
+      )
+    ) {
+      return;
+    }
+    setExcluindo(true);
+    setErro(null);
+    try {
+      await excluirAtendimento(atendimento.id);
+      await onSalvo();
+      onClose();
+    } catch (err) {
+      setErro(extrairMensagemErro(err, 'Erro ao excluir atendimento.'));
+    } finally {
+      setExcluindo(false);
+    }
+  }
 
   useEffect(() => {
     setNome(atendimento.consulente_nome);
@@ -375,9 +403,27 @@ export function FichaConsulenteModal({
           </div>
 
           <div className="flex items-center gap-2 ml-auto">
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={handleExcluir}
+                disabled={excluindo || salvando}
+                className="min-h-[44px] px-3.5 rounded-xl bg-red-50 hover:bg-red-600 hover:text-white border border-red-200 text-red-700 font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition"
+                title="Excluir ficha e atendimento permanentemente"
+              >
+                {excluindo ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                <span>Excluir Ficha</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={onClose}
+              disabled={excluindo || salvando}
               className="min-h-[44px] px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 font-bold text-sm transition"
             >
               Cancelar
@@ -385,7 +431,7 @@ export function FichaConsulenteModal({
             <button
               type="submit"
               form="form-ficha-consulente"
-              disabled={salvando}
+              disabled={excluindo || salvando}
               className="min-h-[44px] px-5 rounded-xl bg-terreiro-700 hover:bg-terreiro-800 disabled:bg-slate-400 text-white font-extrabold text-sm inline-flex items-center gap-2 shadow-sm transition"
             >
               {salvando ? (

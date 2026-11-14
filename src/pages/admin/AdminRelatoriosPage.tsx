@@ -12,6 +12,7 @@ import {
   Search,
   Sparkles,
   Star,
+  Trash2,
   UserCheck,
   Users,
 } from 'lucide-react';
@@ -29,6 +30,7 @@ import {
 import { exportarRelatorioAtendimentosPDF } from '../../lib/pdfExport';
 import {
   consultarRelatorioAtendimentos,
+  excluirAtendimento,
   listarEntidades,
   listarEquipeEspiritual,
   listarGiras,
@@ -92,6 +94,27 @@ export function AdminRelatoriosPage() {
   const [apenasAtendidos, setApenasAtendidos] = useState(false);
   const [apenasComOrientacoes, setApenasComOrientacoes] = useState(false);
   const [apenasPrimeiraVez, setApenasPrimeiraVez] = useState(false);
+  const [excluindoId, setExcluindoId] = useState<string | null>(null);
+
+  async function handleExcluirAtendimento(atendimento: AtendimentoDetalhado) {
+    if (
+      !window.confirm(
+        `Deseja excluir permanentemente o atendimento de "${atendimento.consulente_nome}" (Senha ${formatarSenha(atendimento.numero_senha)}) da gira "${atendimento.gira_titulo}"?\n\nEsta ação apagará a ficha e o registro do histórico.`
+      )
+    ) {
+      return;
+    }
+    setExcluindoId(atendimento.id);
+    setErro(null);
+    try {
+      await excluirAtendimento(atendimento.id);
+      await buscarDados();
+    } catch (err) {
+      setErro(extrairMensagemErro(err, 'Erro ao excluir atendimento.'));
+    } finally {
+      setExcluindoId(null);
+    }
+  }
 
   const buscarDados = useCallback(async () => {
     setCarregando(true);
@@ -745,6 +768,21 @@ export function AdminRelatoriosPage() {
                           <span>WhatsApp</span>
                         </a>
                       )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleExcluirAtendimento(r)}
+                        disabled={excluindoId === r.id}
+                        title="Excluir Ficha / Atendimento"
+                        className="min-h-[38px] px-3 rounded-xl bg-red-50 hover:bg-red-600 hover:text-white border border-red-200 text-red-700 text-xs font-bold inline-flex items-center gap-1 transition"
+                      >
+                        {excluindoId === r.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                        <span>Excluir</span>
+                      </button>
                     </div>
                   </div>
 
