@@ -121,6 +121,15 @@ function normalizarAtendimento(
   };
 }
 
+function normalizarNomeComparacao(nome: string): string {
+  return nome
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 interface LocalDatabase {
   perfis_acesso: PerfilAcesso[];
   equipe_espiritual: EquipeEspiritual[];
@@ -325,46 +334,68 @@ export async function gerarSenhaConsulente(params: {
 }): Promise<ComprovanteSenha> {
   const origem: OrigemCheckin = params.origem ?? 'QRCODE';
   const nomeSanitizado = params.nome.replace(/\s*\|\|\s*/g, ' - ').trim();
+  const nomeComparacao = normalizarNomeComparacao(nomeSanitizado);
   const orientacoesSanitizadas = params.orientacoes?.trim() || null;
   const telLimpo = limparDigitos(params.telefone ?? '');
 
   if (isSupabaseConfigured && supabase) {
-    if (origem === 'QRCODE') {
-      const { data: escalaRow } = await supabase
-        .from('gira_escalas')
-        .select('gira_id')
-        .eq('id', params.escalaId)
-        .maybeSingle();
+    const { data: escalaRow } = await supabase
+      .from('gira_escalas')
+      .select('gira_id')
+      .eq('id', params.escalaId)
+      .maybeSingle();
 
-      const giraId = (escalaRow as { gira_id?: string } | null)?.gira_id;
-      if (giraId) {
+    const giraId = (escalaRow as { gira_id?: string } | null)?.gira_id;
+    if (giraId) {
+      if (origem === 'QRCODE') {
         const localExistente = obterComprovanteAtivoLocal(giraId);
         if (localExistente) {
           return { ...localExistente, ja_existia: true };
         }
+      }
 
-        if (telLimpo.length >= 8) {
-          const { data: atendimentosGira } = await supabase
-            .from('atendimentos')
-            .select('escala_id, consulente_telefone')
-            .eq('gira_id', giraId);
+      const { data: atendimentosGira } = await supabase
+        .from('atendimentos')
+        .select('id, escala_id, numero_senha, consulente_nome, consulente_telefone')
+        .eq('gira_id', giraId);
 
-          const outroComMesmoTelefone = (
-            (atendimentosGira ?? []) as Array<{
-              escala_id: string;
-              consulente_telefone: string | null;
-            }>
-          ).find(
-            (a) =>
-              a.escala_id !== params.escalaId &&
-              limparDigitos(a.consulente_telefone ?? '') === telLimpo
+      const listaGira = (atendimentosGira ?? []) as Array<{
+        id: string;
+        escala_id: string;
+        numero_senha: number;
+        consulente_nome: string;
+        consulente_telefone: string | null;
+      }>;
+
+      const mesmoTelefone =
+        telLimpo.length >= 8
+          ? listaGira.find(
+              (a) => limparDigitos(a.consulente_telefone ?? '') === telLimpo
+            )
+          : undefined;
+
+      const mesmoNome =
+        nomeComparacao.length >= 3
+          ? listaGira.find(
+              (a) =>
+                normalizarNomeComparacao(
+                  separarNomeEOrientacoes(a.consulente_nome, null).nome
+                ) === nomeComparacao
+            )
+          : undefined;
+
+      const duplicado = mesmoTelefone || mesmoNome;
+      if (duplicado) {
+        const recuperarMesmoTelefone =
+          origem === 'QRCODE' &&
+          duplicado.escala_id === params.escalaId &&
+          telLimpo.length >= 8 &&
+          limparDigitos(duplicado.consulente_telefone ?? '') === telLimpo;
+
+        if (!recuperarMesmoTelefone) {
+          throw new Error(
+            `Já existe a senha #${String(duplicado.numero_senha).padStart(2, '0')} gerada nesta gira para ${nomeSanitizado}. Não é permitido gerar mais de 1 senha para a mesma pessoa.`
           );
-
-          if (outroComMesmoTelefone) {
-            throw new Error(
-              'Já existe uma senha gerada nesta gira para este aparelho/telefone (limite de 1 senha por aparelho).'
-            );
-          }
         }
       }
     }
@@ -428,38 +459,56 @@ export async function gerarSenhaConsulente(params: {
     }
   }
 
-  if (origem === 'QRCODE' && telLimpo.length >= 8) {
-    const existente = db.atendimentos.find(
-      (a) =>
-        a.gira_id === gira.id &&
-        limparDigitos(a.consulente_telefone ?? '') === telLimpo
-    );
-    if (existente) {
-      if (existente.escala_id !== escala.id) {
-        throw new Error(
-          'Já existe uma senha gerada nesta gira para este aparelho/telefone (limite de 1 senha por aparelho).'
-        );
-      }
-      return {
-        atendimento_id: existente.id,
-        gira_id: gira.id,
-        escala_id: escala.id,
-        numero_senha: existente.numero_senha,
-        status: existente.status,
-        consulente_nome: existente.consulente_nome,
-        consulente_telefone: existente.consulente_telefone,
-        primeira_vez: existente.primeira_vez,
-        orientacoes: existente.orientacoes ?? null,
-        origem: existente.origem,
-        gira_titulo: gira.titulo,
-        data_gira: gira.data_gira,
-        nome_entidade: entidade?.nome_entidade ?? 'Entidade',
-        linha: entidade?.linha ?? null,
-        medium_nome: medium?.nome ?? 'Médium',
-        criado_em: existente.criado_em,
-        ja_existia: true,
-      };
+  const atdsDaGira = db.atendimentos.filter((a) => a.gira_id === gira.id);
+  const mesmoTelefone =
+    telLimpo.length >= 8
+      ? atdsDaGira.find(
+          (a) => limparDigitos(a.consulente_telefone ?? '') === telLimpo
+        )
+      : undefined;
+  const mesmoNome =
+    nomeComparacao.length >= 3
+      ? atdsDaGira.find(
+          (a) =>
+            normalizarNomeComparacao(
+              separarNomeEOrientacoes(a.consulente_nome, null).nome
+            ) === nomeComparacao
+        )
+      : undefined;
+
+  const existente = mesmoTelefone || mesmoNome;
+  if (existente) {
+    const recuperarMesmoTelefone =
+      origem === 'QRCODE' &&
+      existente.escala_id === escala.id &&
+      telLimpo.length >= 8 &&
+      limparDigitos(existente.consulente_telefone ?? '') === telLimpo;
+
+    if (!recuperarMesmoTelefone) {
+      throw new Error(
+        `Já existe a senha #${String(existente.numero_senha).padStart(2, '0')} gerada nesta gira para ${nomeSanitizado}. Não é permitido gerar mais de 1 senha para a mesma pessoa.`
+      );
     }
+
+    return {
+      atendimento_id: existente.id,
+      gira_id: gira.id,
+      escala_id: escala.id,
+      numero_senha: existente.numero_senha,
+      status: existente.status,
+      consulente_nome: existente.consulente_nome,
+      consulente_telefone: existente.consulente_telefone,
+      primeira_vez: existente.primeira_vez,
+      orientacoes: existente.orientacoes ?? null,
+      origem: existente.origem,
+      gira_titulo: gira.titulo,
+      data_gira: gira.data_gira,
+      nome_entidade: entidade?.nome_entidade ?? 'Entidade',
+      linha: entidade?.linha ?? null,
+      medium_nome: medium?.nome ?? 'Médium',
+      criado_em: existente.criado_em,
+      ja_existia: true,
+    };
   }
 
   if (!escala.ativo) {

@@ -6,6 +6,9 @@ import './index.css';
 
 registerSW({
   immediate: true,
+  onRegisteredSW(_swUrl, registration) {
+    registration?.update();
+  },
 });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

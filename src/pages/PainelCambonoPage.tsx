@@ -49,9 +49,33 @@ import {
   getDisponibilidadeGiraAberta,
   marcarAusenteAtendimento,
   restaurarParaFila,
+  salvarFichaConsulente,
   subscribeFilaGira,
 } from '../services/dataService';
 import type { Atendimento, DisponibilidadeGira } from '../types/database';
+
+const MODELOS_ORIENTACAO_RAPIDA = [
+  {
+    rotulo: '+ Banho de Ervas',
+    texto: 'Banho de ervas recomendado: ',
+  },
+  {
+    rotulo: '+ Vela de 7 Dias',
+    texto: 'Acender vela de 7 dias com firmeza/oração: ',
+  },
+  {
+    rotulo: '+ Oferenda / Elemento',
+    texto: 'Entrega / oferenda orientada: ',
+  },
+  {
+    rotulo: '+ Retorno na próxima gira',
+    texto: 'Orientado(a) a retornar na próxima gira de atendimento.',
+  },
+  {
+    rotulo: '+ Corrente de Oração',
+    texto: 'Incluir nome nas orações / firmezas da casa.',
+  },
+];
 
 export function PainelCambonoPage() {
   const { perfil, signOut, isModoLocal } = useAuth();
@@ -64,10 +88,14 @@ export function PainelCambonoPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [vozAtiva, setVozAtiva] = useState(false);
 
-  const [historicoAberto, setHistoricoAberto] = useState(false);
+  const [abaPainel, setAbaPainel] = useState<'FILA' | 'FICHAS'>('FILA');
+  const [historicoAberto, setHistoricoAberto] = useState(true);
   const [acaoEmAndamentoId, setAcaoEmAndamentoId] = useState<string | null>(null);
   const [buscaFila, setBuscaFila] = useState('');
   const [atendimentoFicha, setAtendimentoFicha] = useState<Atendimento | null>(null);
+  const [rascunhoOrientacoes, setRascunhoOrientacoes] = useState<Record<string, string>>({});
+  const [salvandoOrientacaoId, setSalvandoOrientacaoId] = useState<string | null>(null);
+  const [feedbackOrientacao, setFeedbackOrientacao] = useState<string | null>(null);
 
   // Modal Ausência (RF10)
   const [atendimentoAusencia, setAtendimentoAusencia] = useState<Atendimento | null>(null);
@@ -188,6 +216,75 @@ export function PainelCambonoPage() {
   const totalAtendidos = finalizadosTotal.filter((a) => a.status === 'ATENDIDO').length;
   const totalAusentes = finalizadosTotal.filter((a) => a.status === 'AUSENTE').length;
 
+  const fichasOrdenadas = useMemo(() => {
+    const pesoStatus: Record<string, number> = {
+      EM_ATENDIMENTO: 0,
+      AGUARDANDO: 1,
+      ATENDIDO: 2,
+      AUSENTE: 3,
+      NAO_ATENDIDO: 4,
+    };
+    return filtrarPorBusca(atendimentosEscala).sort((a, b) => {
+      const diff = (pesoStatus[a.status] ?? 9) - (pesoStatus[b.status] ?? 9);
+      return diff !== 0 ? diff : a.numero_senha - b.numero_senha;
+    });
+  }, [atendimentosEscala, filtrarPorBusca]);
+
+  function obterTextoOrientacao(item: Atendimento): string {
+    return rascunhoOrientacoes[item.id] ?? item.orientacoes ?? '';
+  }
+
+  function atualizarTextoOrientacao(atendimentoId: string, texto: string) {
+    setRascunhoOrientacoes((prev) => ({
+      ...prev,
+      [atendimentoId]: texto,
+    }));
+  }
+
+  function inserirModeloRapido(item: Atendimento, modelo: string) {
+    const base = obterTextoOrientacao(item).trim();
+    atualizarTextoOrientacao(item.id, base ? `${base}\n• ${modelo}` : `• ${modelo}`);
+  }
+
+  async function handleSalvarOrientacaoInline(
+    item: Atendimento,
+    finalizarDepois = false
+  ) {
+    setErro(null);
+    setSalvandoOrientacaoId(item.id);
+    try {
+      await salvarFichaConsulente({
+        atendimentoId: item.id,
+        nome: item.consulente_nome,
+        telefone: item.consulente_telefone,
+        primeiraVez: item.primeira_vez,
+        orientacoes: obterTextoOrientacao(item).trim() || null,
+      });
+
+      if (finalizarDepois) {
+        await finalizarAtendimento(item.id);
+      }
+
+      setRascunhoOrientacoes((prev) => {
+        const next = { ...prev };
+        delete next[item.id];
+        return next;
+      });
+
+      setFeedbackOrientacao(
+        finalizarDepois
+          ? `Orientações salvas e atendimento de ${item.consulente_nome} finalizado!`
+          : `Orientações da consulta de ${item.consulente_nome} salvas na ficha!`
+      );
+      setTimeout(() => setFeedbackOrientacao(null), 5000);
+      await carregarDados();
+    } catch (err) {
+      setErro(extrairMensagemErro(err, 'Não foi possível salvar as orientações da consulta.'));
+    } finally {
+      setSalvandoOrientacaoId(null);
+    }
+  }
+
   async function handleChamar(item: Atendimento) {
     setAcaoEmAndamentoId(item.id);
     try {
@@ -195,18 +292,6 @@ export function PainelCambonoPage() {
       if (vozAtiva && escalaSelecionada) {
         falarChamadaVoz(item.numero_senha, item.consulente_nome, escalaSelecionada.nome_entidade);
       }
-      await carregarDados();
-    } catch (err) {
-      setErro(extrairMensagemErro(err));
-    } finally {
-      setAcaoEmAndamentoId(null);
-    }
-  }
-
-  async function handleFinalizar(item: Atendimento) {
-    setAcaoEmAndamentoId(item.id);
-    try {
-      await finalizarAtendimento(item.id);
       await carregarDados();
     } catch (err) {
       setErro(extrairMensagemErro(err));
@@ -445,6 +530,15 @@ export function PainelCambonoPage() {
           </div>
         )}
 
+        {feedbackOrientacao && (
+          <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-2xl p-4 flex items-center justify-between gap-3 text-sm font-bold shadow-sm">
+            <span>{feedbackOrientacao}</span>
+            <button type="button" onClick={() => setFeedbackOrientacao(null)}>
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {escalas.length === 0 ? (
           <div className="bg-white rounded-3xl border border-slate-200 p-8 text-center shadow-sm">
             <img
@@ -553,8 +647,181 @@ export function PainelCambonoPage() {
                   </button>
                 )}
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setAbaPainel('FILA')}
+                  className={`min-h-[44px] px-4 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-2 transition ${
+                    abaPainel === 'FILA'
+                      ? 'bg-terreiro-700 text-white shadow-sm'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  <ClipboardList className="w-4 h-4" />
+                  <span>Fila e Chamada ao Vivo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAbaPainel('FICHAS')}
+                  className={`min-h-[44px] px-4 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center justify-center gap-2 transition ${
+                    abaPainel === 'FICHAS'
+                      ? 'bg-terreiro-700 text-white shadow-sm'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Fichas e Orientações da Consulta ({atendimentosEscala.length})</span>
+                </button>
+              </div>
             </section>
 
+            {abaPainel === 'FICHAS' ? (
+              <section className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+                  <div>
+                    <h2 className="text-sm font-extrabold uppercase tracking-wider text-slate-800">
+                      Fichas e Orientações da Consulta ({fichasOrdenadas.length})
+                    </h2>
+                    <p className="text-xs text-slate-600">
+                      Registre e salve aqui os dados e orientações passadas pela entidade para cada consulente desta escala.
+                    </p>
+                  </div>
+                </div>
+
+                {fichasOrdenadas.length === 0 ? (
+                  <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center text-sm text-slate-500">
+                    Nenhum consulente localizado nesta entidade para o filtro informado.
+                  </div>
+                ) : (
+                  fichasOrdenadas.map((item) => {
+                    const digitosTel = limparDigitos(item.consulente_telefone ?? '');
+                    const salvandoEste = salvandoOrientacaoId === item.id;
+                    return (
+                      <div
+                        key={item.id}
+                        className={`bg-white rounded-2xl border-2 p-4 sm:p-5 shadow-sm space-y-3 ${
+                          item.status === 'EM_ATENDIMENTO'
+                            ? 'border-emerald-400 bg-emerald-50/40'
+                            : 'border-slate-200'
+                        }`}
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="flex items-start gap-2.5">
+                            <span
+                              className={`px-3 py-1 rounded-xl font-black text-base ${
+                                item.status === 'EM_ATENDIMENTO'
+                                  ? 'bg-emerald-700 text-white'
+                                  : 'bg-terreiro-100 text-terreiro-900'
+                              }`}
+                            >
+                              {formatarSenha(item.numero_senha)}
+                            </span>
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="font-extrabold text-slate-900 text-base">
+                                  {item.consulente_nome}
+                                </p>
+                                <span
+                                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                                    item.status === 'EM_ATENDIMENTO'
+                                      ? 'bg-emerald-100 text-emerald-900'
+                                      : item.status === 'AGUARDANDO'
+                                        ? 'bg-sky-100 text-sky-800'
+                                        : item.status === 'ATENDIDO'
+                                          ? 'bg-terreiro-100 text-terreiro-800'
+                                          : 'bg-amber-100 text-amber-800'
+                                  }`}
+                                >
+                                  {item.status === 'EM_ATENDIMENTO'
+                                    ? 'Em Atendimento'
+                                    : item.status === 'AGUARDANDO'
+                                      ? 'Aguardando'
+                                      : item.status === 'ATENDIDO'
+                                        ? 'Atendido'
+                                        : 'Ausente'}
+                                </span>
+                                {item.primeira_vez && (
+                                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[11px] font-bold">
+                                    1ª Vez <Star className="w-3 h-3 fill-amber-600" />
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                {item.consulente_telefone || 'Sem telefone informado'} • Check-in:{' '}
+                                {formatarHoraBR(item.criado_em)}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {digitosTel.length >= 10 && (
+                              <a
+                                href={`https://wa.me/55${digitosTel}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold hover:bg-emerald-100"
+                              >
+                                <MessageCircle className="w-3.5 h-3.5" />
+                                <span>WhatsApp</span>
+                              </a>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setAtendimentoFicha(item)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-terreiro-50 hover:bg-terreiro-100 border border-terreiro-200 text-terreiro-800 text-xs font-bold transition"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>Ficha Completa / Histórico / PDF</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2 pt-1">
+                          <div className="flex flex-wrap gap-1.5">
+                            {MODELOS_ORIENTACAO_RAPIDA.map((m) => (
+                              <button
+                                key={m.rotulo}
+                                type="button"
+                                onClick={() => inserirModeloRapido(item, m.texto)}
+                                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-terreiro-50 border border-slate-200 hover:border-terreiro-200 text-slate-700 hover:text-terreiro-800 text-xs font-bold transition"
+                              >
+                                {m.rotulo}
+                              </button>
+                            ))}
+                          </div>
+
+                          <textarea
+                            rows={3}
+                            value={obterTextoOrientacao(item)}
+                            onChange={(e) => atualizarTextoOrientacao(item.id, e.target.value)}
+                            placeholder="Escreva aqui as orientações passadas pela entidade (banhos de ervas, velas, firmezas, retornos ou dados da consulta)..."
+                            className="w-full p-3 rounded-xl border-2 border-slate-300 bg-white text-sm text-slate-900 focus:border-terreiro-600 focus:outline-none resize-y"
+                          />
+
+                          <div className="flex flex-wrap items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              disabled={salvandoEste}
+                              onClick={() => handleSalvarOrientacaoInline(item, false)}
+                              className="min-h-[42px] px-4 rounded-xl bg-terreiro-700 hover:bg-terreiro-800 disabled:bg-slate-300 text-white text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 transition"
+                            >
+                              {salvandoEste ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Check className="w-4 h-4" />
+                              )}
+                              <span>Salvar Orientações</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </section>
+            ) : (
+              <>
             {/* Bloco A: Em Atendimento Agora */}
             <section className="space-y-2.5">
               <h2 className="text-xs font-extrabold uppercase tracking-wider text-emerald-800 px-1">
@@ -568,7 +835,9 @@ export function PainelCambonoPage() {
                     : 'Nenhum consulente em atendimento no momento. Chame o próximo da fila abaixo.'}
                 </div>
               ) : (
-                emAtendimento.map((item) => (
+                emAtendimento.map((item) => {
+                  const salvandoEste = salvandoOrientacaoId === item.id;
+                  return (
                   <div
                     key={item.id}
                     className="bg-emerald-50 border-2 border-emerald-400 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3"
@@ -600,34 +869,70 @@ export function PainelCambonoPage() {
                         className="min-h-[40px] px-3.5 rounded-xl bg-white hover:bg-emerald-100 border border-emerald-300 text-emerald-900 font-bold text-xs inline-flex items-center gap-1.5 shadow-sm transition"
                       >
                         <FileText className="w-4 h-4" />
-                        <span>Ficha / Orientações</span>
+                        <span>Ficha Completa / Histórico / PDF</span>
                       </button>
                     </div>
 
-                    {item.orientacoes && (
-                      <div className="bg-white/90 border border-emerald-200 rounded-xl p-3 text-xs text-slate-800 whitespace-pre-line">
-                        <span className="font-extrabold text-emerald-900 uppercase block mb-0.5">
-                          Orientações registradas:
-                        </span>
-                        {item.orientacoes}
-                      </div>
-                    )}
+                    <div className="bg-white border border-emerald-200 rounded-2xl p-3.5 space-y-2.5">
+                      <label className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase text-emerald-900">
+                        <FileText className="w-4 h-4" />
+                        <span>Dados da Consulta com a Entidade / Orientações</span>
+                      </label>
 
-                    <button
-                      type="button"
-                      disabled={acaoEmAndamentoId === item.id}
-                      onClick={() => handleFinalizar(item)}
-                      className="w-full min-h-[50px] rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-extrabold text-base inline-flex items-center justify-center gap-2 shadow transition"
-                    >
-                      {acaoEmAndamentoId === item.id ? (
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      ) : (
-                        <Check className="w-5 h-5" />
-                      )}
-                      <span>FINALIZAR ATENDIMENTO</span>
-                    </button>
+                      <div className="flex flex-wrap gap-1.5">
+                        {MODELOS_ORIENTACAO_RAPIDA.map((m) => (
+                          <button
+                            key={m.rotulo}
+                            type="button"
+                            onClick={() => inserirModeloRapido(item, m.texto)}
+                            className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 text-xs font-bold transition"
+                          >
+                            {m.rotulo}
+                          </button>
+                        ))}
+                      </div>
+
+                      <textarea
+                        rows={3}
+                        value={obterTextoOrientacao(item)}
+                        onChange={(e) => atualizarTextoOrientacao(item.id, e.target.value)}
+                        placeholder="Escreva aqui o que a entidade orientou na consulta (banhos de ervas, velas, firmezas, retornos, observações)..."
+                        className="w-full p-3 rounded-xl border-2 border-emerald-200 bg-slate-50 focus:bg-white text-sm text-slate-900 focus:border-emerald-600 focus:outline-none resize-y"
+                      />
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          disabled={salvandoEste || acaoEmAndamentoId === item.id}
+                          onClick={() => handleSalvarOrientacaoInline(item, false)}
+                          className="min-h-[46px] rounded-xl border-2 border-emerald-600 bg-white hover:bg-emerald-50 disabled:opacity-50 text-emerald-800 font-extrabold text-sm inline-flex items-center justify-center gap-1.5 transition"
+                        >
+                          {salvandoEste ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Check className="w-4 h-4" />
+                          )}
+                          <span>Salvar Orientações</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={salvandoEste || acaoEmAndamentoId === item.id}
+                          onClick={() => handleSalvarOrientacaoInline(item, true)}
+                          className="min-h-[46px] rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-extrabold text-sm inline-flex items-center justify-center gap-1.5 shadow transition"
+                        >
+                          {salvandoEste || acaoEmAndamentoId === item.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Check className="w-4 h-4" />
+                          )}
+                          <span>Salvar e Finalizar Atendimento</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                ))
+                );
+                })
               )}
             </section>
 
@@ -822,6 +1127,8 @@ export function PainelCambonoPage() {
                 </div>
               )}
             </section>
+              </>
+            )}
           </>
         )}
       </main>

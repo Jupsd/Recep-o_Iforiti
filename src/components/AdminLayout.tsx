@@ -56,7 +56,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center gap-2">
             <Link
-              to="/?nova=1"
+              to="/"
               className="inline-flex items-center gap-1.5 px-3.5 min-h-[42px] rounded-xl border border-slate-200 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 transition"
             >
               <QrCode className="w-4 h-4" />
