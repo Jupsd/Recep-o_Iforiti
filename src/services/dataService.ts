@@ -847,7 +847,6 @@ export async function excluirAtendimento(atendimentoId: string): Promise<void> {
   const db = lerLocalDb();
   db.atendimentos = db.atendimentos.filter((a) => a.id !== atendimentoId);
   salvarLocalDb(db);
-  notificarMudancaLocal();
 }
 
 export async function chamarConsulente(atendimentoId: string): Promise<void> {
