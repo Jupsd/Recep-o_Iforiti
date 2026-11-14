@@ -3,8 +3,6 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
   ArrowLeft,
-  Database,
-  KeyRound,
   Loader2,
   LogIn,
 } from 'lucide-react';
@@ -15,7 +13,6 @@ import {
   TERREIRO_NOME,
   TERREIRO_SUBTITULO,
 } from '../lib/format';
-import { clearSupabaseRuntimeConfig, saveSupabaseRuntimeConfig } from '../lib/supabase';
 import type { PerfilUsuario } from '../types/database';
 
 function getDestinoPadrao(perfil: PerfilUsuario): string {
@@ -32,10 +29,6 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-
-  const [mostrarConfigSupabase, setMostrarConfigSupabase] = useState(false);
-  const [sbUrl, setSbUrl] = useState('');
-  const [sbKey, setSbKey] = useState('');
 
   useEffect(() => {
     if (perfil) {
@@ -63,13 +56,6 @@ export function LoginPage() {
     } finally {
       setCarregando(false);
     }
-  }
-
-  function salvarConfigSupabase(e: React.FormEvent) {
-    e.preventDefault();
-    if (!sbUrl.trim() || !sbKey.trim()) return;
-    saveSupabaseRuntimeConfig(sbUrl, sbKey);
-    window.location.reload();
   }
 
   return (
@@ -172,76 +158,6 @@ export function LoginPage() {
               )}
             </button>
           </form>
-
-          <div className="mt-5 pt-4 border-t border-slate-100 text-center">
-            <button
-              type="button"
-              onClick={() => setMostrarConfigSupabase((v) => !v)}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-terreiro-700 transition"
-            >
-              <Database className="w-3.5 h-3.5" />
-              <span>
-                {isModoLocal
-                  ? 'Conectar ao meu projeto Supabase'
-                  : 'Alterar conexão Supabase deste navegador'}
-              </span>
-            </button>
-
-            {mostrarConfigSupabase && (
-              <form
-                onSubmit={salvarConfigSupabase}
-                className="mt-3 p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-left space-y-2.5"
-              >
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    VITE_SUPABASE_URL
-                  </label>
-                  <input
-                    type="url"
-                    required
-                    value={sbUrl}
-                    onChange={(e) => setSbUrl(e.target.value)}
-                    placeholder="https://xyz.supabase.co"
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    VITE_SUPABASE_ANON_KEY
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={sbKey}
-                    onChange={(e) => setSbKey(e.target.value)}
-                    placeholder="eyJhbGci..."
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 text-xs"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="submit"
-                    className="flex-1 py-2 rounded-lg bg-terreiro-700 text-white text-xs font-bold inline-flex items-center justify-center gap-1"
-                  >
-                    <KeyRound className="w-3.5 h-3.5" />
-                    <span>Salvar e Conectar</span>
-                  </button>
-                  {!isModoLocal && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        clearSupabaseRuntimeConfig();
-                        window.location.reload();
-                      }}
-                      className="px-3 py-2 rounded-lg border border-slate-300 text-xs font-semibold text-slate-700"
-                    >
-                      Usar Local
-                    </button>
-                  )}
-                </div>
-              </form>
-            )}
-          </div>
         </div>
       </div>
     </div>
