@@ -75,13 +75,15 @@ export function AdminGiraPage() {
 
   // QR Code
   const qrWrapperRef = useRef<HTMLDivElement | null>(null);
-  const [copiado, setCopiado] = useState(false);
+  const [copiadoCurto, setCopiadoCurto] = useState(false);
+  const [copiadoDireto, setCopiadoDireto] = useState(false);
 
   const mediunsAtivos = equipe.filter((m) => m.tipo === 'MEDIUM' && m.ativo);
   const cambonosAtivos = equipe.filter((m) => m.tipo === 'CAMBONO' && m.ativo);
   const entidadesAtivas = entidades.filter((e) => e.ativo);
 
   const urlPublicaCheckin = `${window.location.origin}${import.meta.env.BASE_URL}`;
+  const urlCurtaOficial = 'https://is.gd/iforiti';
 
   const carregarTudo = useCallback(async () => {
     try {
@@ -265,11 +267,16 @@ export function AdminGiraPage() {
     link.click();
   }
 
-  async function copiarUrl() {
+  async function copiarTexto(texto: string, tipo: 'curto' | 'direto') {
     try {
-      await navigator.clipboard.writeText(urlPublicaCheckin);
-      setCopiado(true);
-      setTimeout(() => setCopiado(false), 2500);
+      await navigator.clipboard.writeText(texto);
+      if (tipo === 'curto') {
+        setCopiadoCurto(true);
+        setTimeout(() => setCopiadoCurto(false), 2500);
+      } else {
+        setCopiadoDireto(true);
+        setTimeout(() => setCopiadoDireto(false), 2500);
+      }
     } catch {
       // Ignore clipboard deny
     }
@@ -511,30 +518,67 @@ export function AdminGiraPage() {
                   className="p-4 rounded-2xl bg-white border-2 border-terreiro-200 shadow-inner print:border-0"
                 >
                   <QRCodeCanvas
-                    value={urlPublicaCheckin}
+                    value={urlCurtaOficial}
                     size={210}
                     level="H"
                     includeMargin
                   />
                 </div>
 
-                <div className="w-full bg-slate-50 rounded-xl p-2.5 border border-slate-200 flex items-center justify-between gap-2">
-                  <span className="text-xs text-slate-600 truncate font-mono">
-                    {urlPublicaCheckin}
-                  </span>
+                {/* Link Encurtador Limpo */}
+                <div className="w-full bg-emerald-50 rounded-xl p-3 border border-emerald-200 text-left space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-extrabold uppercase text-emerald-900 tracking-wider">
+                      Link Encurtado Oficial
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => copiarTexto(urlCurtaOficial, 'curto')}
+                      className="shrink-0 px-2.5 py-1 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-xs font-bold text-white inline-flex items-center gap-1 transition"
+                    >
+                      {copiadoCurto ? (
+                        <>
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Copiado!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Copiar</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-sm font-black text-emerald-950 font-mono select-all">
+                    {urlCurtaOficial}
+                  </p>
+                  <p className="text-[11px] text-emerald-800">
+                    Sem &quot;github&quot; no nome — ideal para enviar pelo WhatsApp ou digitar no celular.
+                  </p>
+                </div>
+
+                <div className="w-full bg-slate-50 rounded-xl p-2.5 border border-slate-200 flex items-center justify-between gap-2 print:hidden">
+                  <div className="min-w-0 text-left">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 block">
+                      Link Direto de Backup:
+                    </span>
+                    <span className="text-xs text-slate-600 truncate block font-mono">
+                      {urlPublicaCheckin}
+                    </span>
+                  </div>
                   <button
                     type="button"
-                    onClick={copiarUrl}
-                    className="shrink-0 px-2.5 py-1.5 rounded-lg bg-white border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-100 inline-flex items-center gap-1"
+                    onClick={() => copiarTexto(urlPublicaCheckin, 'direto')}
+                    className="shrink-0 px-2 py-1 rounded-lg bg-white border border-slate-300 text-[11px] font-bold text-slate-700 hover:bg-slate-100 inline-flex items-center gap-1"
                   >
-                    {copiado ? (
+                    {copiadoDireto ? (
                       <>
-                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <Check className="w-3 h-3 text-emerald-600" />
                         <span>Copiado</span>
                       </>
                     ) : (
                       <>
-                        <Copy className="w-3.5 h-3.5" />
+                        <Copy className="w-3 h-3" />
                         <span>Copiar</span>
                       </>
                     )}
@@ -562,7 +606,7 @@ export function AdminGiraPage() {
 
                 <p className="text-xs text-slate-500">
                   <QrCode className="w-3.5 h-3.5 inline mr-1" />
-                  O consulente aponta a câmera do celular para este QR Code e retira a senha sem precisar baixar aplicativo.
+                  O consulente aponta a câmera do celular para este QR Code ou acessa <strong className="font-mono text-slate-800">is.gd/iforiti</strong> para retirar a senha sem precisar baixar aplicativo.
                 </p>
               </div>
 
