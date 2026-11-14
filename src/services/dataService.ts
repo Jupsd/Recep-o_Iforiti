@@ -1030,6 +1030,56 @@ export async function alternarEntidadeAtiva(id: string, ativo: boolean): Promise
   salvarLocalDb(db);
 }
 
+export async function atualizarEntidade(
+  id: string,
+  nome_entidade: string,
+  linha: string
+): Promise<void> {
+  const nomeLimpo = nome_entidade.trim();
+  if (!nomeLimpo) {
+    throw new Error('Informe o nome da entidade.');
+  }
+  const linhaLimpa = linha.trim() || null;
+
+  if (isSupabaseConfigured && supabase) {
+    const { error } = await supabase
+      .from('entidades')
+      .update({ nome_entidade: nomeLimpo, linha: linhaLimpa })
+      .eq('id', id);
+    if (error) throw error;
+    return;
+  }
+
+  const db = lerLocalDb();
+  db.entidades = db.entidades.map((e) =>
+    e.id === id ? { ...e, nome_entidade: nomeLimpo, linha: linhaLimpa } : e
+  );
+  salvarLocalDb(db);
+}
+
+export async function excluirEntidade(id: string): Promise<void> {
+  if (isSupabaseConfigured && supabase) {
+    const { error: errEscalas } = await supabase
+      .from('gira_escalas')
+      .delete()
+      .eq('entidade_id', id);
+    if (errEscalas) throw errEscalas;
+
+    const { error } = await supabase.from('entidades').delete().eq('id', id);
+    if (error) throw error;
+    return;
+  }
+
+  const db = lerLocalDb();
+  const escalasRemovidas = new Set(
+    db.gira_escalas.filter((esc) => esc.entidade_id === id).map((esc) => esc.id)
+  );
+  db.atendimentos = db.atendimentos.filter((a) => !escalasRemovidas.has(a.escala_id));
+  db.gira_escalas = db.gira_escalas.filter((esc) => esc.entidade_id !== id);
+  db.entidades = db.entidades.filter((e) => e.id !== id);
+  salvarLocalDb(db);
+}
+
 export async function listarEquipeEspiritual(): Promise<EquipeEspiritual[]> {
   if (isSupabaseConfigured && supabase) {
     const { data, error } = await supabase
@@ -1085,6 +1135,66 @@ export async function alternarMembroAtivo(id: string, ativo: boolean): Promise<v
   db.equipe_espiritual = db.equipe_espiritual.map((m) =>
     m.id === id ? { ...m, ativo } : m
   );
+  salvarLocalDb(db);
+}
+
+export async function atualizarMembroEquipe(
+  id: string,
+  nome: string,
+  tipo: TipoMembro
+): Promise<void> {
+  const nomeLimpo = nome.trim();
+  if (!nomeLimpo) {
+    throw new Error('Informe o nome do integrante.');
+  }
+
+  if (isSupabaseConfigured && supabase) {
+    const { error } = await supabase
+      .from('equipe_espiritual')
+      .update({ nome: nomeLimpo, tipo })
+      .eq('id', id);
+    if (error) throw error;
+    return;
+  }
+
+  const db = lerLocalDb();
+  db.equipe_espiritual = db.equipe_espiritual.map((m) =>
+    m.id === id ? { ...m, nome: nomeLimpo, tipo } : m
+  );
+  salvarLocalDb(db);
+}
+
+export async function excluirMembroEquipe(id: string): Promise<void> {
+  if (isSupabaseConfigured && supabase) {
+    const { error: errCambono } = await supabase
+      .from('gira_escalas')
+      .update({ cambono_id: null })
+      .eq('cambono_id', id);
+    if (errCambono) throw errCambono;
+
+    const { error: errMedium } = await supabase
+      .from('gira_escalas')
+      .delete()
+      .eq('medium_id', id);
+    if (errMedium) throw errMedium;
+
+    const { error } = await supabase
+      .from('equipe_espiritual')
+      .delete()
+      .eq('id', id);
+    if (error) throw error;
+    return;
+  }
+
+  const db = lerLocalDb();
+  const escalasRemovidas = new Set(
+    db.gira_escalas.filter((esc) => esc.medium_id === id).map((esc) => esc.id)
+  );
+  db.atendimentos = db.atendimentos.filter((a) => !escalasRemovidas.has(a.escala_id));
+  db.gira_escalas = db.gira_escalas
+    .filter((esc) => esc.medium_id !== id)
+    .map((esc) => (esc.cambono_id === id ? { ...esc, cambono_id: null } : esc));
+  db.equipe_espiritual = db.equipe_espiritual.filter((m) => m.id !== id);
   salvarLocalDb(db);
 }
 
