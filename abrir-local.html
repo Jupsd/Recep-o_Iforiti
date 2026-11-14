@@ -581,6 +581,8 @@
         var COMP_LIST_KEY = 'iforiti_comprovantes_v2';
         var COMP_ACTIVE_KEY = 'iforiti_comprovante_ativo_id_v2';
         var SUPABASE_RUNTIME_KEY = 'iforiti_supabase_runtime_v1';
+        var DEFAULT_SB_URL = 'https://bqlfwuckswlurnpgvcfb.supabase.co';
+        var DEFAULT_SB_KEY = 'sb_publishable_3hDqxSuIHbYHexvDCzqs7Q_4wX_LolZ';
         var CHANNEL_NAME = 'iforiti_realtime_v1';
 
         var STATUS_LABEL = {
@@ -903,6 +905,13 @@
         // ============================================================
         // MODO ONLINE OPCIONAL (SUPABASE VIA FETCH NATIVO - ZERO CDN)
         // ============================================================
+        function normalizeSbUrl(rawUrl) {
+          return String(rawUrl || '')
+            .trim()
+            .replace(/\/rest\/v1\/?$/i, '')
+            .replace(/\/+$/, '');
+        }
+
         function getSupabaseConfig() {
           try {
             var raw = localStorage.getItem(SUPABASE_RUNTIME_KEY);
@@ -910,7 +919,7 @@
             var cfg = JSON.parse(raw);
             if (cfg && cfg.url && cfg.anonKey) {
               return {
-                url: cfg.url.replace(/\/+$/, ''),
+                url: normalizeSbUrl(cfg.url),
                 anonKey: cfg.anonKey.trim(),
                 accessToken: cfg.accessToken || null,
               };
@@ -927,12 +936,15 @@
 
         function sbHeaders(cfg, useAuth) {
           var token = (useAuth && cfg.accessToken) || cfg.anonKey;
-          return {
+          var headers = {
             apikey: cfg.anonKey,
-            Authorization: 'Bearer ' + token,
             'Content-Type': 'application/json',
             Prefer: 'return=representation',
           };
+          if (token && String(token).split('.').length === 3) {
+            headers.Authorization = 'Bearer ' + token;
+          }
+          return headers;
         }
 
         async function sbFetch(path, options) {
@@ -962,18 +974,69 @@
           try {
             var h = { headers: sbHeaders(cfg, true) };
             var results = await Promise.all([
-              sbFetch('/rest/v1/giras?select=*&order=criado_em.desc', h),
-              sbFetch('/rest/v1/entidades?select=*&order=nome.asc', h),
+              sbFetch('/rest/v1/giras?select=*&order=aberta_em.desc', h),
+              sbFetch('/rest/v1/entidades?select=*&order=nome_entidade.asc', h),
               sbFetch('/rest/v1/equipe_espiritual?select=*&order=nome.asc', h),
               sbFetch('/rest/v1/gira_escalas?select=*&order=criado_em.asc', h),
               sbFetch('/rest/v1/atendimentos?select=*&order=numero_senha.asc', h),
             ]);
+            var rawAtendimentos = results[4] || [];
+            var countByEscala = {};
+            var mappedAtendimentos = rawAtendimentos.map(function (a) {
+              countByEscala[a.escala_id] = (countByEscala[a.escala_id] || 0) + 1;
+              return {
+                id: a.id,
+                gira_id: a.gira_id,
+                gira_escala_id: a.escala_id,
+                numero_senha: a.numero_senha,
+                codigo_senha: padSenha(a.numero_senha),
+                nome_consulente: a.consulente_nome,
+                telefone_consulente: a.consulente_telefone,
+                origem: a.origem === 'QRCODE' ? 'QR_CODE' : a.origem,
+                status: a.status,
+                criado_em: a.criado_em,
+                chamado_em: a.chamado_em,
+                finalizado_em: a.hora_atendimento,
+              };
+            });
             state.supabaseCache = {
-              giras: results[0] || [],
-              entidades: results[1] || [],
-              equipe_espiritual: results[2] || [],
-              gira_escalas: results[3] || [],
-              atendimentos: results[4] || [],
+              giras: (results[0] || []).map(function (g) {
+                return Object.assign({}, g, {
+                  criado_em: g.aberta_em,
+                });
+              }),
+              entidades: (results[1] || []).map(function (e) {
+                return {
+                  id: e.id,
+                  nome: e.nome_entidade,
+                  descricao: e.linha || '',
+                  ativo: e.ativo,
+                  criado_em: e.criado_em,
+                };
+              }),
+              equipe_espiritual: (results[2] || []).map(function (m) {
+                return {
+                  id: m.id,
+                  nome: m.nome,
+                  funcao: m.tipo,
+                  ativo: m.ativo,
+                  criado_em: m.criado_em,
+                };
+              }),
+              gira_escalas: (results[3] || []).map(function (es) {
+                return {
+                  id: es.id,
+                  gira_id: es.gira_id,
+                  entidade_id: es.entidade_id,
+                  medium_id: es.medium_id,
+                  cambono_id: es.cambono_id,
+                  limite_senhas: es.limite_senhas,
+                  senhas_emitidas: countByEscala[es.id] || 0,
+                  pausada: es.ativo === false,
+                  criado_em: es.criado_em,
+                };
+              }),
+              atendimentos: mappedAtendimentos,
               perfis_acesso: [],
             };
           } catch (err) {
@@ -1571,9 +1634,11 @@
                 method: 'POST',
                 headers: sbHeaders(cfg, false),
                 body: JSON.stringify({
-                  p_gira_escala_id: escalaId,
-                  p_nome_consulente: nome,
-                  p_telefone_consulente: formatPhone(telDigits),
+                  p_escala_id: escalaId,
+                  p_nome: nome,
+                  p_telefone: formatPhone(telDigits),
+                  p_primeira_vez: false,
+                  p_origem: 'QRCODE',
                 }),
               });
               var row = Array.isArray(res) ? res[0] : res;
@@ -1585,21 +1650,27 @@
               var ent = (db.entidades || []).find(function (e) {
                 return escItem && e.id === escItem.entidade_id;
               });
+              var codGerado = padSenha(row.numero_senha);
               saveComprovanteLocal({
-                atendimento_id: row.id || row.atendimento_id,
-                gira_id: gira ? gira.id : '',
-                gira_titulo: gira ? gira.titulo : 'Gira Aberta',
-                gira_data: gira ? gira.data_gira : todayIso(),
-                gira_escala_id: escalaId,
-                entidade_nome: ent ? ent.nome : row.entidade_nome || 'Atendimento',
-                codigo_senha: row.codigo_senha,
+                atendimento_id: row.atendimento_id || row.id,
+                gira_id: row.gira_id || (gira ? gira.id : ''),
+                gira_titulo: row.gira_titulo || (gira ? gira.titulo : 'Gira Aberta'),
+                gira_data: row.data_gira || (gira ? gira.data_gira : todayIso()),
+                gira_escala_id: row.escala_id || escalaId,
+                entidade_nome: row.nome_entidade || (ent ? ent.nome : 'Atendimento'),
+                codigo_senha: codGerado,
                 numero_senha: row.numero_senha,
-                nome_consulente: nome,
-                telefone_consulente: formatPhone(telDigits),
-                criado_em: new Date().toISOString(),
+                nome_consulente: row.consulente_nome || nome,
+                telefone_consulente: row.consulente_telefone || formatPhone(telDigits),
+                criado_em: row.criado_em || new Date().toISOString(),
               });
               await syncSupabaseState(true);
-              setFlash('ok', 'Senha #' + row.codigo_senha + ' gerada com sucesso!');
+              setFlash(
+                row.ja_existia ? 'warn' : 'ok',
+                row.ja_existia
+                  ? 'Este telefone já possui a senha #' + codGerado + ' ativa nesta gira!'
+                  : 'Senha #' + codGerado + ' gerada com sucesso!'
+              );
               navigate('#/senha');
             } catch (err) {
               setFlash('err', err.message);
@@ -1722,9 +1793,10 @@
                 method: 'POST',
                 headers: sbHeaders(cfg, true),
                 body: JSON.stringify({
-                  p_gira_escala_id: escalaId,
-                  p_nome_consulente: nome,
-                  p_telefone_consulente: telDigits ? formatPhone(telDigits) : null,
+                  p_escala_id: escalaId,
+                  p_nome: nome,
+                  p_telefone: telDigits ? formatPhone(telDigits) : null,
+                  p_primeira_vez: false,
                   p_origem: 'MANUAL',
                 }),
               });
@@ -1833,7 +1905,7 @@
                 headers: sbHeaders(cfg, true),
                 body: JSON.stringify({
                   status: 'ATENDIDO',
-                  finalizado_em: new Date().toISOString(),
+                  hora_atendimento: new Date().toISOString(),
                 }),
               });
               await syncSupabaseState(true);
@@ -1936,7 +2008,6 @@
                 body: JSON.stringify({
                   titulo: titulo.trim(),
                   data_gira: dataGira || todayIso(),
-                  observacao: observacao ? observacao.trim() : null,
                   status: 'ABERTA',
                 }),
               });
@@ -1946,10 +2017,9 @@
                   gira_id: novaGira.id,
                   entidade_id: r.entidade_id,
                   medium_id: r.medium_id,
-                  cambono_id: r.cambono_id,
+                  cambono_id: r.cambono_id || null,
                   limite_senhas: Number(r.limite_senhas),
-                  senhas_emitidas: 0,
-                  pausada: false,
+                  ativo: true,
                 };
               });
               await sbFetch('/rest/v1/gira_escalas', {
@@ -2046,7 +2116,7 @@
               await sbFetch('/rest/v1/gira_escalas?id=eq.' + escalaId, {
                 method: 'PATCH',
                 headers: sbHeaders(cfg, true),
-                body: JSON.stringify({ pausada: !cur.pausada }),
+                body: JSON.stringify({ ativo: Boolean(cur.pausada) }),
               });
               await syncSupabaseState(true);
             } catch (err) {
@@ -2140,10 +2210,9 @@
                   gira_id: gira.id,
                   entidade_id: entId,
                   medium_id: medId,
-                  cambono_id: camId,
+                  cambono_id: camId || null,
                   limite_senhas: limite,
-                  senhas_emitidas: 0,
-                  pausada: false,
+                  ativo: true,
                 }),
               });
               setFlash('ok', 'Entidade adicionada à gira aberta!');
@@ -2874,12 +2943,14 @@
             '<div class="grid-2">' +
             '<div class="field"><label class="label" for="sb-url">URL do Projeto Supabase</label>' +
             '<input id="sb-url" class="input" type="url" value="' +
-            esc(cfg ? cfg.url : '') +
-            '" placeholder="https://xxxx.supabase.co" /></div>' +
-            '<div class="field"><label class="label" for="sb-key">Anon Public Key</label>' +
+            esc(cfg ? cfg.url : DEFAULT_SB_URL) +
+            '" placeholder="' +
+            esc(DEFAULT_SB_URL) +
+            '" /></div>' +
+            '<div class="field"><label class="label" for="sb-key">Anon / Publishable Key</label>' +
             '<input id="sb-key" class="input" type="text" value="' +
-            esc(cfg ? cfg.anonKey : '') +
-            '" placeholder="eyJ..." /></div>' +
+            esc(cfg ? cfg.anonKey : DEFAULT_SB_KEY) +
+            '" placeholder="sb_publishable_..." /></div>' +
             '</div>' +
             '<div class="row-flex">' +
             '<button type="submit" class="btn btn-primary btn-sm">Salvar Modo Online</button>' +
@@ -3927,9 +3998,15 @@
                     setFlash('err', 'Perfil não encontrado ou bloqueado.');
                     return render();
                   }
-                  setAuth(p);
+                  var papelNorm = p.perfil || p.papel;
+                  setAuth({
+                    id: p.id,
+                    nome: p.nome,
+                    email: p.email,
+                    papel: papelNorm,
+                  });
                   await syncSupabaseState(true);
-                  navigate(p.papel === 'ADMIN' ? '#/admin/gira' : '#/painel');
+                  navigate(papelNorm === 'ADMIN' ? '#/admin/gira' : '#/painel');
                 } catch (err) {
                   setFlash('err', 'Falha no login Supabase: ' + err.message);
                   render();
@@ -3964,7 +4041,7 @@
           if (formSb) {
             formSb.addEventListener('submit', async function (ev) {
               ev.preventDefault();
-              var u = document.getElementById('sb-url').value.trim().replace(/\/+$/, '');
+              var u = normalizeSbUrl(document.getElementById('sb-url').value);
               var k = document.getElementById('sb-key').value.trim();
               if (!u || !k) {
                 setFlash('err', 'Preencha URL e Anon Key do Supabase.');
@@ -4245,7 +4322,7 @@
                   await sbFetch('/rest/v1/entidades', {
                     method: 'POST',
                     headers: sbHeaders(cfg, true),
-                    body: JSON.stringify({ nome: nome, descricao: desc || null, ativo: true }),
+                    body: JSON.stringify({ nome_entidade: nome, linha: desc || null, ativo: true }),
                   });
                   await syncSupabaseState(true);
                 } catch (err) {
@@ -4314,7 +4391,7 @@
                   await sbFetch('/rest/v1/equipe_espiritual', {
                     method: 'POST',
                     headers: sbHeaders(cfg, true),
-                    body: JSON.stringify({ nome: nome, funcao: funcao, ativo: true }),
+                    body: JSON.stringify({ nome: nome, tipo: funcao, ativo: true }),
                   });
                   await syncSupabaseState(true);
                 } catch (err) {

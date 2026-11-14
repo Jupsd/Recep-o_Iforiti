@@ -1,10 +1,19 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const RUNTIME_CONFIG_KEY = 'iforiti_supabase_runtime_v1';
+const DEFAULT_SUPABASE_URL = 'https://bqlfwuckswlurnpgvcfb.supabase.co';
+const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_3hDqxSuIHbYHexvDCzqs7Q_4wX_LolZ';
 
 interface RuntimeSupabaseConfig {
   url: string;
   anonKey: string;
+}
+
+function normalizarSupabaseUrl(rawUrl: string): string {
+  return rawUrl
+    .trim()
+    .replace(/\/rest\/v1\/?$/i, '')
+    .replace(/\/+$/, '');
 }
 
 function getRuntimeConfig(): RuntimeSupabaseConfig | null {
@@ -13,7 +22,10 @@ function getRuntimeConfig(): RuntimeSupabaseConfig | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<RuntimeSupabaseConfig>;
     if (parsed.url && parsed.anonKey) {
-      return { url: parsed.url.trim(), anonKey: parsed.anonKey.trim() };
+      return {
+        url: normalizarSupabaseUrl(parsed.url),
+        anonKey: parsed.anonKey.trim(),
+      };
     }
     return null;
   } catch {
@@ -21,12 +33,14 @@ function getRuntimeConfig(): RuntimeSupabaseConfig | null {
   }
 }
 
-const envUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim() || '';
+const envUrl = normalizarSupabaseUrl(
+  (import.meta.env.VITE_SUPABASE_URL as string | undefined) || ''
+);
 const envKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)?.trim() || '';
 const runtime = typeof window !== 'undefined' ? getRuntimeConfig() : null;
 
-const activeUrl = envUrl || runtime?.url || '';
-const activeKey = envKey || runtime?.anonKey || '';
+const activeUrl = runtime?.url || envUrl || DEFAULT_SUPABASE_URL;
+const activeKey = runtime?.anonKey || envKey || DEFAULT_SUPABASE_ANON_KEY;
 
 export const isSupabaseConfigured = Boolean(
   activeUrl &&
@@ -53,7 +67,7 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured
 export function saveSupabaseRuntimeConfig(url: string, anonKey: string): void {
   localStorage.setItem(
     RUNTIME_CONFIG_KEY,
-    JSON.stringify({ url: url.trim(), anonKey: anonKey.trim() })
+    JSON.stringify({ url: normalizarSupabaseUrl(url), anonKey: anonKey.trim() })
   );
 }
 

@@ -559,20 +559,90 @@ END
 $$;
 
 -- ============================================================================
--- OPCIONAL: Dados Iniciais de Exemplo (descomente se desejar pré-popular)
+-- 16. Dados Iniciais Idempotentes e Vínculo Automático de Perfis
 -- ============================================================================
-/*
-INSERT INTO equipe_espiritual (nome, tipo) VALUES
-  ('Pai João', 'MEDIUM'),
-  ('Mãe Clara', 'MEDIUM'),
-  ('Médium Carlos', 'MEDIUM'),
-  ('Cambono Lucas', 'CAMBONO'),
-  ('Cambona Mariana', 'CAMBONO');
+INSERT INTO equipe_espiritual (nome, tipo)
+SELECT v.nome, v.tipo::tipo_membro
+FROM (
+  VALUES
+    ('Pai João', 'MEDIUM'),
+    ('Mãe Clara', 'MEDIUM'),
+    ('Médium Carlos', 'MEDIUM'),
+    ('Cambono Lucas', 'CAMBONO'),
+    ('Cambona Mariana', 'CAMBONO')
+) AS v(nome, tipo)
+WHERE NOT EXISTS (
+  SELECT 1 FROM equipe_espiritual e WHERE e.nome = v.nome
+);
 
-INSERT INTO entidades (nome_entidade, linha) VALUES
-  ('Caboclo Sete Flechas', 'Caboclos'),
-  ('Cabocla Jurema', 'Caboclos'),
-  ('Vovó Maria Conga', 'Pretos Velhos'),
-  ('Pai Joaquim de Aruanda', 'Pretos Velhos'),
-  ('Exu Tranca Ruas', 'Esquerda');
-*/
+INSERT INTO entidades (nome_entidade, linha)
+SELECT v.nome_entidade, v.linha
+FROM (
+  VALUES
+    ('Caboclo Sete Flechas', 'Caboclos'),
+    ('Cabocla Jurema', 'Caboclos'),
+    ('Vovó Maria Conga', 'Pretos Velhos'),
+    ('Caboclo Pena Branca', 'Caboclos')
+) AS v(nome_entidade, linha)
+WHERE NOT EXISTS (
+  SELECT 1 FROM entidades ent WHERE ent.nome_entidade = v.nome_entidade
+);
+
+INSERT INTO perfis_acesso (id, nome, email, perfil, ativo)
+SELECT
+  u.id,
+  CASE
+    WHEN LOWER(u.email) = 'admin@terreiro.org' THEN 'Dirigente / Administrador'
+    ELSE 'Cambono de Plantão'
+  END,
+  u.email,
+  CASE
+    WHEN LOWER(u.email) = 'admin@terreiro.org' THEN 'ADMIN'::perfil_usuario
+    ELSE 'CAMBONO'::perfil_usuario
+  END,
+  TRUE
+FROM auth.users u
+WHERE LOWER(u.email) IN ('admin@terreiro.org', 'cambono@terreiro.org')
+ON CONFLICT (id) DO UPDATE
+SET
+  email = EXCLUDED.email,
+  perfil = EXCLUDED.perfil,
+  ativo = TRUE;
+
+CREATE OR REPLACE FUNCTION public.handle_new_auth_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_papel perfil_usuario;
+  v_nome VARCHAR(100);
+BEGIN
+  IF LOWER(COALESCE(NEW.email, '')) = 'admin@terreiro.org'
+     OR NOT EXISTS (
+       SELECT 1 FROM public.perfis_acesso WHERE perfil = 'ADMIN' AND ativo = TRUE
+     ) THEN
+    v_papel := 'ADMIN';
+    v_nome := COALESCE(NULLIF(NEW.raw_user_meta_data->>'nome', ''), 'Dirigente / Administrador');
+  ELSE
+    v_papel := 'CAMBONO';
+    v_nome := COALESCE(NULLIF(NEW.raw_user_meta_data->>'nome', ''), 'Cambono de Plantão');
+  END IF;
+
+  INSERT INTO public.perfis_acesso (id, nome, email, perfil, ativo)
+  VALUES (NEW.id, v_nome, NEW.email, v_papel, TRUE)
+  ON CONFLICT (id) DO UPDATE
+  SET
+    email = EXCLUDED.email,
+    ativo = TRUE;
+
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_new_auth_user();
