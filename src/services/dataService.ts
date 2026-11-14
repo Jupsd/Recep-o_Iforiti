@@ -1,4 +1,5 @@
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
+import { obterComprovanteAtivoLocal } from '../lib/comprovanteStorage';
 import { limparDigitos } from '../lib/format';
 import type {
   Atendimento,
@@ -325,8 +326,49 @@ export async function gerarSenhaConsulente(params: {
   const origem: OrigemCheckin = params.origem ?? 'QRCODE';
   const nomeSanitizado = params.nome.replace(/\s*\|\|\s*/g, ' - ').trim();
   const orientacoesSanitizadas = params.orientacoes?.trim() || null;
+  const telLimpo = limparDigitos(params.telefone ?? '');
 
   if (isSupabaseConfigured && supabase) {
+    if (origem === 'QRCODE') {
+      const { data: escalaRow } = await supabase
+        .from('gira_escalas')
+        .select('gira_id')
+        .eq('id', params.escalaId)
+        .maybeSingle();
+
+      const giraId = (escalaRow as { gira_id?: string } | null)?.gira_id;
+      if (giraId) {
+        const localExistente = obterComprovanteAtivoLocal(giraId);
+        if (localExistente) {
+          return { ...localExistente, ja_existia: true };
+        }
+
+        if (telLimpo.length >= 8) {
+          const { data: atendimentosGira } = await supabase
+            .from('atendimentos')
+            .select('escala_id, consulente_telefone')
+            .eq('gira_id', giraId);
+
+          const outroComMesmoTelefone = (
+            (atendimentosGira ?? []) as Array<{
+              escala_id: string;
+              consulente_telefone: string | null;
+            }>
+          ).find(
+            (a) =>
+              a.escala_id !== params.escalaId &&
+              limparDigitos(a.consulente_telefone ?? '') === telLimpo
+          );
+
+          if (outroComMesmoTelefone) {
+            throw new Error(
+              'Já existe uma senha gerada nesta gira para este aparelho/telefone (limite de 1 senha por aparelho).'
+            );
+          }
+        }
+      }
+    }
+
     const { data, error } = await supabase.rpc('gerar_senha_consulente', {
       p_escala_id: params.escalaId,
       p_nome: nomeSanitizado,
@@ -378,16 +420,26 @@ export async function gerarSenhaConsulente(params: {
 
   const entidade = db.entidades.find((e) => e.id === escala.entidade_id);
   const medium = db.equipe_espiritual.find((m) => m.id === escala.medium_id);
-  const telLimpo = limparDigitos(params.telefone ?? '');
+
+  if (origem === 'QRCODE') {
+    const localExistente = obterComprovanteAtivoLocal(gira.id);
+    if (localExistente) {
+      return { ...localExistente, ja_existia: true };
+    }
+  }
 
   if (origem === 'QRCODE' && telLimpo.length >= 8) {
     const existente = db.atendimentos.find(
       (a) =>
         a.gira_id === gira.id &&
-        a.escala_id === escala.id &&
         limparDigitos(a.consulente_telefone ?? '') === telLimpo
     );
     if (existente) {
+      if (existente.escala_id !== escala.id) {
+        throw new Error(
+          'Já existe uma senha gerada nesta gira para este aparelho/telefone (limite de 1 senha por aparelho).'
+        );
+      }
       return {
         atendimento_id: existente.id,
         gira_id: gira.id,
@@ -463,18 +515,63 @@ export async function gerarSenhaConsulente(params: {
   };
 }
 
-export async function getAtendimentoStatusEPosicao(atendimentoId: string): Promise<{
+export async function getAtendimentoStatusEPosicao(
+  atendimentoId: string,
+  giraId?: string
+): Promise<{
+  giraEncerrada: boolean;
   status: StatusAtendimento;
   pessoasNaFrente: number;
-} | null> {
+}> {
   if (isSupabaseConfigured && supabase) {
+    if (giraId) {
+      const { data: giraRow, error: giraErr } = await supabase
+        .from('giras')
+        .select('id, status')
+        .eq('id', giraId)
+        .maybeSingle();
+
+      if (giraErr) throw giraErr;
+      if (!giraRow || giraRow.status !== 'ABERTA') {
+        return {
+          giraEncerrada: true,
+          status: 'NAO_ATENDIDO',
+          pessoasNaFrente: 0,
+        };
+      }
+    }
+
     const { data: atual, error } = await supabase
       .from('atendimentos')
-      .select('id, escala_id, numero_senha, status')
+      .select('id, gira_id, escala_id, numero_senha, status')
       .eq('id', atendimentoId)
       .maybeSingle();
 
-    if (error || !atual) return null;
+    if (error) throw error;
+    if (!atual) {
+      return {
+        giraEncerrada: true,
+        status: 'NAO_ATENDIDO',
+        pessoasNaFrente: 0,
+      };
+    }
+
+    if (!giraId) {
+      const { data: giraRow, error: giraErr } = await supabase
+        .from('giras')
+        .select('id, status')
+        .eq('id', atual.gira_id)
+        .maybeSingle();
+
+      if (giraErr) throw giraErr;
+      if (!giraRow || giraRow.status !== 'ABERTA') {
+        return {
+          giraEncerrada: true,
+          status: 'NAO_ATENDIDO',
+          pessoasNaFrente: 0,
+        };
+      }
+    }
 
     let pessoasNaFrente = 0;
     if (atual.status === 'AGUARDANDO') {
@@ -488,6 +585,7 @@ export async function getAtendimentoStatusEPosicao(atendimentoId: string): Promi
     }
 
     return {
+      giraEncerrada: false,
       status: atual.status as StatusAtendimento,
       pessoasNaFrente,
     };
@@ -495,7 +593,14 @@ export async function getAtendimentoStatusEPosicao(atendimentoId: string): Promi
 
   const db = lerLocalDb();
   const atual = db.atendimentos.find((a) => a.id === atendimentoId);
-  if (!atual) return null;
+  const gira = db.giras.find((g) => g.id === (giraId || atual?.gira_id));
+  if (!atual || !gira || gira.status !== 'ABERTA') {
+    return {
+      giraEncerrada: true,
+      status: 'NAO_ATENDIDO',
+      pessoasNaFrente: 0,
+    };
+  }
 
   const pessoasNaFrente =
     atual.status === 'AGUARDANDO'
@@ -508,6 +613,7 @@ export async function getAtendimentoStatusEPosicao(atendimentoId: string): Promi
       : 0;
 
   return {
+    giraEncerrada: false,
     status: atual.status,
     pessoasNaFrente,
   };
@@ -516,6 +622,7 @@ export async function getAtendimentoStatusEPosicao(atendimentoId: string): Promi
 export function subscribeAtendimento(
   atendimentoId: string,
   escalaId: string,
+  giraId: string,
   onAtualizacao: (novoStatus?: StatusAtendimento) => void
 ): () => void {
   if (isSupabaseConfigured && supabase) {
@@ -537,6 +644,18 @@ export function subscribeAtendimento(
           } else {
             onAtualizacao();
           }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'giras',
+          filter: `id=eq.${giraId}`,
+        },
+        () => {
+          onAtualizacao();
         }
       )
       .subscribe();

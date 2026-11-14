@@ -17,12 +17,8 @@ export function listarComprovantesLocais(giraId?: string): ComprovanteSenha[] {
 
 export function salvarComprovanteLocal(comprovante: ComprovanteSenha): void {
   try {
-    const atuais = listarComprovantesLocais();
-    const filtrados = atuais.filter(
-      (item) => item.atendimento_id !== comprovante.atendimento_id
-    );
-    const novaLista = [comprovante, ...filtrados].slice(0, 15);
-    localStorage.setItem(STORAGE_LIST_KEY, JSON.stringify(novaLista));
+    // Limite estrito de 1 senha ativa por aparelho
+    localStorage.setItem(STORAGE_LIST_KEY, JSON.stringify([comprovante]));
     localStorage.setItem(STORAGE_ACTIVE_ID_KEY, comprovante.atendimento_id);
   } catch {
     // Ignore quota errors
@@ -76,3 +72,15 @@ export function limparComprovantesLocais(): void {
   }
 }
 
+export function limparComprovantesExcetoGira(giraAbertaId: string | null): void {
+  if (!giraAbertaId) {
+    limparComprovantesLocais();
+    return;
+  }
+  const ativos = listarComprovantesLocais(giraAbertaId);
+  if (ativos.length === 0) {
+    limparComprovantesLocais();
+    return;
+  }
+  salvarComprovanteLocal(ativos[0]);
+}

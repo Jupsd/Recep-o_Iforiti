@@ -2,10 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   BellRing,
+  CalendarX2,
   CheckCircle2,
   Clock,
   Info,
-  PlusCircle,
   RefreshCw,
   Ticket,
   UserCheck,
@@ -14,8 +14,7 @@ import {
 } from 'lucide-react';
 import {
   atualizarStatusComprovanteLocal,
-  definirComprovanteAtivoId,
-  listarComprovantesLocais,
+  limparComprovantesLocais,
   obterComprovanteAtivoLocal,
 } from '../lib/comprovanteStorage';
 import {
@@ -78,9 +77,7 @@ export function SenhaPage() {
   const [comprovante, setComprovante] = useState<ComprovanteSenha | null>(() =>
     obterComprovanteAtivoLocal()
   );
-  const [todosLocais, setTodosLocais] = useState<ComprovanteSenha[]>(() =>
-    listarComprovantesLocais()
-  );
+  const [giraEncerrada, setGiraEncerrada] = useState(false);
   const [pessoasNaFrente, setPessoasNaFrente] = useState<number | null>(null);
   const [online, setOnline] = useState<boolean>(
     typeof navigator !== 'undefined' ? navigator.onLine : true
@@ -99,24 +96,27 @@ export function SenhaPage() {
 
       setSincronizando(true);
       try {
-        const res = await getAtendimentoStatusEPosicao(alvo.atendimento_id);
+        const res = await getAtendimentoStatusEPosicao(alvo.atendimento_id, alvo.gira_id);
         setOnline(true);
-        if (res) {
-          setPessoasNaFrente(res.pessoasNaFrente);
-          if (res.status !== statusAnteriorRef.current) {
-            if (res.status === 'EM_ATENDIMENTO') {
-              notificarChamadaNoDispositivo();
-            }
-            statusAnteriorRef.current = res.status;
-          }
-          atualizarStatusComprovanteLocal(alvo.atendimento_id, res.status);
-          setComprovante((prev) =>
-            prev && prev.atendimento_id === alvo.atendimento_id
-              ? { ...prev, status: res.status }
-              : prev
-          );
-          setTodosLocais(listarComprovantesLocais());
+        if (res.giraEncerrada) {
+          limparComprovantesLocais();
+          setGiraEncerrada(true);
+          setComprovante(null);
+          return;
         }
+        setPessoasNaFrente(res.pessoasNaFrente);
+        if (res.status !== statusAnteriorRef.current) {
+          if (res.status === 'EM_ATENDIMENTO') {
+            notificarChamadaNoDispositivo();
+          }
+          statusAnteriorRef.current = res.status;
+        }
+        atualizarStatusComprovanteLocal(alvo.atendimento_id, res.status);
+        setComprovante((prev) =>
+          prev && prev.atendimento_id === alvo.atendimento_id
+            ? { ...prev, status: res.status }
+            : prev
+        );
       } catch {
         setOnline(false);
       } finally {
@@ -157,46 +157,70 @@ export function SenhaPage() {
     const unsubscribe = subscribeAtendimento(
       comprovante.atendimento_id,
       comprovante.escala_id,
+      comprovante.gira_id,
       () => {
         sincronizarComServidor(comprovante);
       }
     );
 
-    return () => unsubscribe();
-  }, [comprovante?.atendimento_id, comprovante?.escala_id, sincronizarComServidor]);
+    const intervalId = window.setInterval(() => {
+      sincronizarComServidor(comprovante);
+    }, 15000);
 
-  function selecionarOutroComprovante(item: ComprovanteSenha) {
-    definirComprovanteAtivoId(item.atendimento_id);
-    statusAnteriorRef.current = item.status;
-    setComprovante(item);
-    setPessoasNaFrente(null);
-  }
+    return () => {
+      unsubscribe();
+      window.clearInterval(intervalId);
+    };
+  }, [comprovante?.atendimento_id, comprovante?.escala_id, comprovante?.gira_id, sincronizarComServidor]);
 
   if (!comprovante) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-3xl shadow-md border border-slate-200 p-7 text-center">
-          <Ticket className="w-12 h-12 text-terreiro-700 mx-auto mb-3" />
-          <h1 className="text-xl font-bold text-slate-900 mb-2">
-            Nenhuma senha salva neste aparelho
-          </h1>
-          <p className="text-sm text-slate-600 mb-6">
-            Faça seu check-in na tela inicial para retirar sua senha digital.
-          </p>
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className="w-full min-h-[48px] rounded-xl bg-terreiro-700 text-white font-bold hover:bg-terreiro-800 transition"
-          >
-            Ir para o Check-in
-          </button>
+          {giraEncerrada ? (
+            <>
+              <CalendarX2 className="w-12 h-12 text-amber-600 mx-auto mb-3" />
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-extrabold uppercase mb-3">
+                Senha Sem Validade
+              </div>
+              <h1 className="text-xl font-bold text-slate-900 mb-2">
+                Gira Encerrada pelo Administrador
+              </h1>
+              <p className="text-sm text-slate-600 mb-6">
+                Esta gira foi finalizada e todas as senhas emitidas perderam a validade. Quando uma nova gira for aberta, você poderá retirar uma nova senha.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/', { replace: true })}
+                className="w-full min-h-[48px] rounded-xl bg-terreiro-700 text-white font-bold hover:bg-terreiro-800 transition"
+              >
+                Voltar à Tela Inicial
+              </button>
+            </>
+          ) : (
+            <>
+              <Ticket className="w-12 h-12 text-terreiro-700 mx-auto mb-3" />
+              <h1 className="text-xl font-bold text-slate-900 mb-2">
+                Nenhuma senha salva neste aparelho
+              </h1>
+              <p className="text-sm text-slate-600 mb-6">
+                Faça seu check-in na tela inicial para retirar sua senha digital.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/', { replace: true })}
+                className="w-full min-h-[48px] rounded-xl bg-terreiro-700 text-white font-bold hover:bg-terreiro-800 transition"
+              >
+                Ir para o Check-in
+              </button>
+            </>
+          )}
         </div>
       </div>
     );
   }
 
   const badge = getBadgeEstilo(comprovante.status);
-  const mesmosDaGira = todosLocais.filter((c) => c.gira_id === comprovante.gira_id);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-terreiro-900 via-terreiro-800 to-slate-100 pb-10">
@@ -238,25 +262,6 @@ export function SenhaPage() {
         <p className="text-lg font-bold text-white">
           {comprovante.gira_titulo} • {formatarDataBR(comprovante.data_gira)}
         </p>
-
-        {mesmosDaGira.length > 1 && (
-          <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1">
-            {mesmosDaGira.map((item) => (
-              <button
-                key={item.atendimento_id}
-                type="button"
-                onClick={() => selecionarOutroComprovante(item)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
-                  item.atendimento_id === comprovante.atendimento_id
-                    ? 'bg-white text-terreiro-900 shadow'
-                    : 'bg-white/15 text-white hover:bg-white/25'
-                }`}
-              >
-                {formatarSenha(item.numero_senha)} • {item.consulente_nome.split(' ')[0]}
-              </button>
-            ))}
-          </div>
-        )}
       </header>
 
       <main className="max-w-lg mx-auto px-4 space-y-4">
@@ -333,7 +338,7 @@ export function SenhaPage() {
             <div>
               <p className="font-semibold">Fique atento à chamada pelo nome ou número.</p>
               <p className="text-sky-800 mt-0.5">
-                Esta tela fica salva no seu aparelho e pode ser visualizada mesmo se o sinal de internet oscilar dentro do terreiro.
+                Limite de 1 senha por aparelho. Esta senha fica salva para consulta rápida e perde a validade automaticamente quando a gira for encerrada pelo Administrador.
               </p>
             </div>
           </div>
@@ -349,14 +354,6 @@ export function SenhaPage() {
               <RefreshCw className={`w-4 h-4 ${sincronizando ? 'animate-spin' : ''}`} />
               <span>Atualizar Status Agora</span>
             </button>
-
-            <Link
-              to="/?nova=1"
-              className="w-full min-h-[48px] rounded-xl bg-terreiro-700 hover:bg-terreiro-800 text-white font-bold text-sm inline-flex items-center justify-center gap-2 transition"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Retirar outra senha (acompanhante / outra entidade)</span>
-            </Link>
 
             <Link
               to="/login"

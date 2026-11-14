@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
   CalendarX2,
@@ -12,15 +12,14 @@ import {
   UserCheck,
 } from 'lucide-react';
 import {
+  limparComprovantesExcetoGira,
+  limparComprovantesLocais,
   obterComprovanteAtivoLocal,
   salvarComprovanteLocal,
-  definirComprovanteAtivoId,
-  listarComprovantesLocais,
 } from '../lib/comprovanteStorage';
 import {
   extrairMensagemErro,
   formatarDataBR,
-  formatarSenha,
   formatarTelefone,
   limparDigitos,
   LOGO_TERREIRO_URL,
@@ -36,8 +35,6 @@ import type { DisponibilidadeGira } from '../types/database';
 
 export function CheckinPage() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const permitirNova = searchParams.get('nova') === '1';
 
   const [escalas, setEscalas] = useState<DisponibilidadeGira[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -57,10 +54,13 @@ export function CheckinPage() {
       const dados = await getDisponibilidadeGiraAberta();
       setEscalas(dados);
 
-      if (dados.length > 0) {
+      if (dados.length === 0) {
+        limparComprovantesLocais();
+      } else {
         const giraId = dados[0].gira_id;
+        limparComprovantesExcetoGira(giraId);
         const salvo = obterComprovanteAtivoLocal(giraId);
-        if (salvo && !permitirNova) {
+        if (salvo) {
           navigate('/senha', { replace: true });
           return;
         }
@@ -78,7 +78,7 @@ export function CheckinPage() {
     } catch (err) {
       // Se estiver offline e houver comprovante salvo, redireciona para /senha (RNF02)
       const salvoOffline = obterComprovanteAtivoLocal();
-      if (salvoOffline && !permitirNova) {
+      if (salvoOffline) {
         navigate('/senha', { replace: true });
         return;
       }
@@ -86,7 +86,7 @@ export function CheckinPage() {
     } finally {
       setCarregando(false);
     }
-  }, [navigate, permitirNova]);
+  }, [navigate]);
 
   useEffect(() => {
     carregarGira();
@@ -97,11 +97,15 @@ export function CheckinPage() {
   }, [carregarGira]);
 
   const giraInfo = escalas[0];
-  const comprovantesDaGira = giraInfo ? listarComprovantesLocais(giraInfo.gira_id) : [];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErroEnvio(null);
+
+    if (giraInfo && obterComprovanteAtivoLocal(giraInfo.gira_id)) {
+      navigate('/senha', { replace: true });
+      return;
+    }
 
     if (nome.trim().length < 3) {
       setErroEnvio('Por favor, informe seu nome completo.');
@@ -252,30 +256,6 @@ export function CheckinPage() {
 
         {!erroCarga && escalas.length > 0 && (
           <div className="space-y-4">
-            {comprovantesDaGira.length > 0 && (
-              <div className="bg-terreiro-50 border border-terreiro-300 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-sm">
-                <div>
-                  <p className="text-xs font-bold uppercase text-terreiro-800">
-                    Você já possui senha salva nesta gira
-                  </p>
-                  <p className="text-sm text-terreiro-900 font-medium">
-                    {formatarSenha(comprovantesDaGira[0].numero_senha)} •{' '}
-                    {comprovantesDaGira[0].nome_entidade}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    definirComprovanteAtivoId(comprovantesDaGira[0].atendimento_id);
-                    navigate('/senha');
-                  }}
-                  className="shrink-0 px-4 min-h-[44px] rounded-xl bg-terreiro-700 text-white text-sm font-bold hover:bg-terreiro-800 transition"
-                >
-                  Ver Senha
-                </button>
-              </div>
-            )}
-
             <form
               onSubmit={handleSubmit}
               className="bg-white rounded-3xl shadow-xl border border-slate-200 p-5 sm:p-6 space-y-6"
