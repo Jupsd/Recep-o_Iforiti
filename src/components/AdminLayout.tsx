@@ -56,15 +56,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center gap-2">
             <Link
-              to="/painel"
-              className="inline-flex items-center gap-2 px-3.5 min-h-[42px] rounded-xl border border-terreiro-200 bg-terreiro-50 text-terreiro-800 text-sm font-semibold hover:bg-terreiro-100 transition"
-            >
-              <ClipboardList className="w-4 h-4" />
-              <span>Painel Cambono</span>
-            </Link>
-            <Link
               to="/?nova=1"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 min-h-[42px] rounded-xl border border-slate-200 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 transition"
+              className="inline-flex items-center gap-1.5 px-3.5 min-h-[42px] rounded-xl border border-slate-200 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 transition"
             >
               <QrCode className="w-4 h-4" />
               <span>Tela Pública</span>
@@ -93,6 +86,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           <NavLink to="/admin/relatorios" className={navClass}>
             <BarChart3 className="w-4 h-4" />
             <span>Busca, Histórico & Relatórios</span>
+          </NavLink>
+          <NavLink to="/painel" className={navClass}>
+            <ClipboardList className="w-4 h-4" />
+            <span>Fila / Cambono</span>
           </NavLink>
         </nav>
       </header>

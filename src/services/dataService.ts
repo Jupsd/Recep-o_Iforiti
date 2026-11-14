@@ -1126,7 +1126,7 @@ export async function consultarRelatorioAtendimentos(
         .from('atendimentos')
         .select('*')
         .order('criado_em', { ascending: false })
-        .limit(3000),
+        .limit(20000),
     ]);
 
     if (gRes.error) throw gRes.error;

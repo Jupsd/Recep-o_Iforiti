@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 import {
   Calendar,
   Eraser,
+  FileDown,
   FileSpreadsheet,
   FileText,
   Filter,
@@ -25,6 +26,7 @@ import {
   limparDigitos,
   STATUS_ATENDIMENTO_LABEL,
 } from '../../lib/format';
+import { exportarRelatorioAtendimentosPDF } from '../../lib/pdfExport';
 import {
   consultarRelatorioAtendimentos,
   listarEntidades,
@@ -338,6 +340,16 @@ export function AdminRelatoriosPage() {
               >
                 <Filter className="w-4 h-4" />
                 <span>{mostrarFiltrosAvancados ? 'Ocultar Filtros' : 'Mais Filtros'}</span>
+              </button>
+
+              <button
+                type="button"
+                disabled={registros.length === 0}
+                onClick={() => exportarRelatorioAtendimentosPDF(registros, resumo)}
+                className="min-h-[42px] px-4 rounded-xl bg-red-700 hover:bg-red-800 disabled:bg-slate-300 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 transition shadow-sm"
+              >
+                <FileDown className="w-4 h-4" />
+                <span>Exportar PDF</span>
               </button>
 
               <button

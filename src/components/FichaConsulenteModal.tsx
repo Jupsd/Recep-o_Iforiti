@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   Check,
+  FileDown,
   FileText,
   History,
   Loader2,
@@ -18,6 +19,7 @@ import {
   STATUS_ATENDIMENTO_LABEL,
   TERREIRO_NOME,
 } from '../lib/format';
+import { exportarFichaConsulentePDF } from '../lib/pdfExport';
 import {
   buscarHistoricoConsulente,
   salvarFichaConsulente,
@@ -334,21 +336,43 @@ export function FichaConsulenteModal({
 
         {/* Rodapé Ações */}
         <div className="border-t border-slate-200 bg-slate-50 px-5 py-3.5 flex flex-wrap items-center justify-between gap-2">
-          {digitosTel.length >= 10 ? (
-            <a
-              href={`https://wa.me/55${digitosTel}?text=${encodeURIComponent(mensagemWhatsApp)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="min-h-[44px] px-4 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition"
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                exportarFichaConsulentePDF({
+                  numeroSenha: atendimento.numero_senha,
+                  nome: nome.trim() || atendimento.consulente_nome,
+                  telefone: telefone.trim() || null,
+                  primeiraVez,
+                  entidade: entidadeExibida,
+                  medium: mediumExibido,
+                  cambono: cambonoNome ?? (atendimento as Partial<AtendimentoDetalhado>).cambono_nome,
+                  giraTitulo: giraExibida,
+                  dataGira: dataExibida,
+                  status: atendimento.status,
+                  orientacoes: orientacoes.trim() || null,
+                  historico,
+                })
+              }
+              className="min-h-[44px] px-3.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-800 font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition"
             >
-              <MessageCircle className="w-4 h-4" />
-              <span>Enviar Orientações no WhatsApp</span>
-            </a>
-          ) : (
-            <span className="text-xs text-slate-400">
-              Informe um WhatsApp válido para habilitar envio rápido.
-            </span>
-          )}
+              <FileDown className="w-4 h-4" />
+              <span>Extrair PDF</span>
+            </button>
+
+            {digitosTel.length >= 10 && (
+              <a
+                href={`https://wa.me/55${digitosTel}?text=${encodeURIComponent(mensagemWhatsApp)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="min-h-[44px] px-3.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>WhatsApp</span>
+              </a>
+            )}
+          </div>
 
           <div className="flex items-center gap-2 ml-auto">
             <button
@@ -377,3 +401,4 @@ export function FichaConsulenteModal({
     </div>
   );
 }
+

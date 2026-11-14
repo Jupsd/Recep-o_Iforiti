@@ -2,9 +2,12 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
+  BarChart3,
+  CalendarCog,
   Check,
   ChevronDown,
   ChevronUp,
+  ClipboardList,
   Clock,
   FileText,
   Loader2,
@@ -15,9 +18,9 @@ import {
   RotateCcw,
   Search,
   Settings,
-  Shield,
   Star,
   UserPlus,
+  Users,
   Volume2,
   VolumeX,
   X,
@@ -373,10 +376,10 @@ export function PainelCambonoPage() {
             {perfil?.perfil === 'ADMIN' && (
               <Link
                 to="/admin/gira"
-                className="min-h-[42px] px-3.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 text-white font-bold text-sm inline-flex items-center gap-1.5 transition"
+                className="min-h-[42px] px-3.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition"
               >
-                <Shield className="w-4 h-4" />
-                <span className="hidden sm:inline">Admin</span>
+                <CalendarCog className="w-4 h-4" />
+                <span>Administração</span>
               </Link>
             )}
 
@@ -384,12 +387,45 @@ export function PainelCambonoPage() {
               type="button"
               onClick={handleSair}
               title="Sair"
-              className="min-h-[42px] px-3 rounded-xl bg-white/10 hover:bg-red-600 border border-white/20 text-white transition inline-flex items-center justify-center"
+              className="min-h-[42px] px-3 rounded-xl bg-white/10 hover:bg-red-600 border border-white/20 text-white font-bold text-xs sm:text-sm transition inline-flex items-center gap-1.5"
             >
               <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Sair</span>
             </button>
           </div>
         </div>
+
+        {perfil?.perfil === 'ADMIN' && (
+          <nav className="bg-white text-slate-700 border-b border-slate-200">
+            <div className="max-w-4xl mx-auto px-4 py-2.5 flex items-center gap-2 overflow-x-auto">
+              <Link
+                to="/admin/gira"
+                className="inline-flex items-center gap-2 px-3.5 min-h-[40px] rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-slate-700 hover:bg-slate-100 transition"
+              >
+                <CalendarCog className="w-4 h-4" />
+                <span>Gestão da Gira &amp; QR Code</span>
+              </Link>
+              <Link
+                to="/admin/cadastros"
+                className="inline-flex items-center gap-2 px-3.5 min-h-[40px] rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-slate-700 hover:bg-slate-100 transition"
+              >
+                <Users className="w-4 h-4" />
+                <span>Cadastros Base</span>
+              </Link>
+              <Link
+                to="/admin/relatorios"
+                className="inline-flex items-center gap-2 px-3.5 min-h-[40px] rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap text-slate-700 hover:bg-slate-100 transition"
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>Busca, Histórico &amp; Relatórios</span>
+              </Link>
+              <span className="inline-flex items-center gap-2 px-3.5 min-h-[40px] rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap bg-terreiro-700 text-white shadow-sm">
+                <ClipboardList className="w-4 h-4" />
+                <span>Fila / Cambono</span>
+              </span>
+            </div>
+          </nav>
+        )}
       </header>
 
       <main className="max-w-4xl mx-auto px-4 pt-5 space-y-5">

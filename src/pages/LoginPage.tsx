@@ -16,12 +16,17 @@ import {
   TERREIRO_SUBTITULO,
 } from '../lib/format';
 import { clearSupabaseRuntimeConfig, saveSupabaseRuntimeConfig } from '../lib/supabase';
+import type { PerfilUsuario } from '../types/database';
+
+function getDestinoPadrao(perfil: PerfilUsuario): string {
+  return perfil === 'ADMIN' ? '/admin/gira' : '/painel';
+}
 
 export function LoginPage() {
   const { perfil, signIn, isModoLocal } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const destino = (location.state as { from?: string } | null)?.from || '/painel';
+  const rotaOrigem = (location.state as { from?: string } | null)?.from;
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,9 +39,13 @@ export function LoginPage() {
 
   useEffect(() => {
     if (perfil) {
-      navigate(destino, { replace: true });
+      const alvo =
+        rotaOrigem && rotaOrigem !== '/login'
+          ? rotaOrigem
+          : getDestinoPadrao(perfil.perfil);
+      navigate(alvo, { replace: true });
     }
-  }, [perfil, destino, navigate]);
+  }, [perfil, rotaOrigem, navigate]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,11 +53,11 @@ export function LoginPage() {
     setCarregando(true);
     try {
       const logado = await signIn(email, password);
-      if (destino === '/login') {
-        navigate(logado.perfil === 'ADMIN' ? '/admin/gira' : '/painel', { replace: true });
-      } else {
-        navigate(destino, { replace: true });
-      }
+      const alvo =
+        rotaOrigem && rotaOrigem !== '/login'
+          ? rotaOrigem
+          : getDestinoPadrao(logado.perfil);
+      navigate(alvo, { replace: true });
     } catch (err) {
       setErro(extrairMensagemErro(err, 'Falha ao entrar. Verifique suas credenciais.'));
     } finally {
