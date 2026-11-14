@@ -40,8 +40,8 @@ jobs:
 
       - name: Compilar aplicação e gerar PWA
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || vars.VITE_SUPABASE_URL || 'https://bqlfwuckswlurnpgvcfb.supabase.co' }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || vars.VITE_SUPABASE_ANON_KEY || 'sb_publishable_3hDqxSuIHbYHexvDCzqs7Q_4wX_LolZ' }}
+          VITE_SUPABASE_URL: 'https://bqlfwuckswlurnpgvcfb.supabase.co'
+          VITE_SUPABASE_ANON_KEY: 'sb_publishable_3hDqxSuIHbYHexvDCzqs7Q_4wX_LolZ'
         run: |
           npm run build
           cp dist/index.html dist/404.html
