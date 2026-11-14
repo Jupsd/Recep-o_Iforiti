@@ -96,26 +96,6 @@ export function AdminRelatoriosPage() {
   const [apenasPrimeiraVez, setApenasPrimeiraVez] = useState(false);
   const [excluindoId, setExcluindoId] = useState<string | null>(null);
 
-  async function handleExcluirAtendimento(atendimento: AtendimentoDetalhado) {
-    if (
-      !window.confirm(
-        `Deseja excluir permanentemente o atendimento de "${atendimento.consulente_nome}" (Senha ${formatarSenha(atendimento.numero_senha)}) da gira "${atendimento.gira_titulo}"?\n\nEsta ação apagará a ficha e o registro do histórico.`
-      )
-    ) {
-      return;
-    }
-    setExcluindoId(atendimento.id);
-    setErro(null);
-    try {
-      await excluirAtendimento(atendimento.id);
-      await buscarDados();
-    } catch (err) {
-      setErro(extrairMensagemErro(err, 'Erro ao excluir atendimento.'));
-    } finally {
-      setExcluindoId(null);
-    }
-  }
-
   const buscarDados = useCallback(async () => {
     setCarregando(true);
     setErro(null);
@@ -178,6 +158,26 @@ export function AdminRelatoriosPage() {
     setApenasAtendidos(false);
     setApenasComOrientacoes(false);
     setApenasPrimeiraVez(false);
+  }
+
+  async function handleExcluirAtendimento(atendimento: AtendimentoDetalhado) {
+    if (
+      !window.confirm(
+        `Deseja excluir permanentemente o atendimento de "${atendimento.consulente_nome}" (Senha ${formatarSenha(atendimento.numero_senha)}) da gira "${atendimento.gira_titulo}"?\n\nEsta ação apagará a ficha e o registro do histórico.`
+      )
+    ) {
+      return;
+    }
+    setExcluindoId(atendimento.id);
+    setErro(null);
+    try {
+      await excluirAtendimento(atendimento.id);
+      await buscarDados();
+    } catch (err) {
+      setErro(extrairMensagemErro(err, 'Erro ao excluir atendimento.'));
+    } finally {
+      setExcluindoId(null);
+    }
   }
 
   const possuiFiltroAtivo = Boolean(
