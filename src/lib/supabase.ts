@@ -48,6 +48,8 @@ function criarClienteSeguro(url: string, key: string): SupabaseClient | null {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
+        lock: async <R>(_name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> =>
+          await fn(),
       },
       realtime: {
         params: {

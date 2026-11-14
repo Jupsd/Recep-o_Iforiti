@@ -3,8 +3,11 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
   ArrowLeft,
+  Eye,
+  EyeOff,
   Loader2,
   LogIn,
+  RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -27,6 +30,8 @@ export function LoginPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [limpandoCache, setLimpandoCache] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -55,6 +60,40 @@ export function LoginPage() {
       setErro(extrairMensagemErro(err, 'Falha ao entrar. Verifique suas credenciais.'));
     } finally {
       setCarregando(false);
+    }
+  }
+
+  async function limparCacheENavegador() {
+    setLimpandoCache(true);
+    try {
+      try {
+        localStorage.clear();
+      } catch {
+        // Ignora falha de localStorage
+      }
+      try {
+        sessionStorage.clear();
+      } catch {
+        // Ignora falha de sessionStorage
+      }
+      if ('serviceWorker' in navigator) {
+        try {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((r) => r.unregister()));
+        } catch {
+          // Ignora falha ao remover Service Worker
+        }
+      }
+      if ('caches' in window) {
+        try {
+          const keys = await window.caches.keys();
+          await Promise.all(keys.map((k) => window.caches.delete(k)));
+        } catch {
+          // Ignora falha ao limpar Cache API
+        }
+      }
+    } finally {
+      window.location.replace(`${window.location.pathname}?atualizado=${Date.now()}`);
     }
   }
 
@@ -118,16 +157,30 @@ export function LoginPage() {
               >
                 Senha
               </label>
-              <input
-                id="login-senha"
-                type="password"
-                required
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full min-h-[48px] px-4 rounded-xl border-2 border-slate-300 text-base text-slate-900 focus:border-terreiro-600 focus:outline-none transition"
-              />
+              <div className="relative">
+                <input
+                  id="login-senha"
+                  type={mostrarSenha ? 'text' : 'password'}
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full min-h-[48px] pl-4 pr-12 rounded-xl border-2 border-slate-300 text-base text-slate-900 focus:border-terreiro-600 focus:outline-none transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => setMostrarSenha((v) => !v)}
+                  aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition"
+                >
+                  {mostrarSenha ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
             </div>
 
             {erro && (
@@ -158,6 +211,24 @@ export function LoginPage() {
               )}
             </button>
           </form>
+
+          <div className="mt-5 pt-4 border-t border-slate-100 text-center">
+            <button
+              type="button"
+              onClick={limparCacheENavegador}
+              disabled={limpandoCache}
+              className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-terreiro-700 disabled:opacity-50 transition"
+            >
+              <RefreshCw
+                className={`w-3.5 h-3.5 ${limpandoCache ? 'animate-spin' : ''}`}
+              />
+              <span>
+                {limpandoCache
+                  ? 'Atualizando navegador...'
+                  : 'Não está entrando no PC? Atualizar e limpar cache deste navegador'}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

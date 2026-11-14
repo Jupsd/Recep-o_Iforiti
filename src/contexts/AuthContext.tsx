@@ -4,6 +4,32 @@ import { getLocalSeedProfiles } from '../services/dataService';
 import type { PerfilAcesso, PerfilUsuario } from '../types/database';
 
 const LOCAL_AUTH_KEY = 'iforiti_local_auth_v1';
+const LEGACY_RUNTIME_CONFIG_KEY = 'iforiti_supabase_runtime_v1';
+
+function construirPerfilFallback(user: {
+  id: string;
+  email?: string | null;
+  user_metadata?: Record<string, unknown>;
+}): PerfilAcesso {
+  const emailNorm = (user.email || '').trim().toLowerCase();
+  const ehAdmin =
+    emailNorm.startsWith('admin') || user.user_metadata?.perfil === 'ADMIN';
+  const nomeMeta = user.user_metadata?.nome;
+
+  return {
+    id: user.id,
+    nome:
+      typeof nomeMeta === 'string' && nomeMeta.trim()
+        ? nomeMeta.trim()
+        : ehAdmin
+        ? 'Dirigente / Administrador'
+        : 'Cambono de Plantão',
+    email: user.email ?? null,
+    perfil: ehAdmin ? 'ADMIN' : 'CAMBONO',
+    ativo: true,
+    criado_em: new Date().toISOString(),
+  };
+}
 
 interface AuthContextValue {
   perfil: PerfilAcesso | null;
@@ -34,11 +60,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               .from('perfis_acesso')
               .select('*')
               .eq('id', session.user.id)
-              .eq('ativo', true)
               .maybeSingle();
 
             if (mounted) {
-              setPerfil((row as PerfilAcesso | null) ?? null);
+              if (row) {
+                const perfilRow = row as PerfilAcesso;
+                setPerfil(perfilRow.ativo ? perfilRow : null);
+              } else {
+                setPerfil(construirPerfilFallback(session.user));
+              }
             }
           }
         } catch {
@@ -68,20 +98,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const client = supabase;
       const {
         data: { subscription },
-      } = client.auth.onAuthStateChange(async (_event, session) => {
+      } = client.auth.onAuthStateChange((event, session) => {
         if (!session?.user) {
           if (mounted) setPerfil(null);
           return;
         }
-        const { data: row } = await client
-          .from('perfis_acesso')
-          .select('*')
-          .eq('id', session.user.id)
-          .eq('ativo', true)
-          .maybeSingle();
-        if (mounted) {
-          setPerfil((row as PerfilAcesso | null) ?? null);
+        if (event === 'SIGNED_IN') {
+          return;
         }
+        const usuario = session.user;
+        window.setTimeout(async () => {
+          if (!mounted) return;
+          try {
+            const { data: row } = await client
+              .from('perfis_acesso')
+              .select('*')
+              .eq('id', usuario.id)
+              .maybeSingle();
+
+            if (!mounted) return;
+            if (row) {
+              const perfilRow = row as PerfilAcesso;
+              setPerfil(perfilRow.ativo ? perfilRow : null);
+            } else {
+              setPerfil(construirPerfilFallback(usuario));
+            }
+          } catch {
+            if (mounted) {
+              setPerfil(construirPerfilFallback(usuario));
+            }
+          }
+        }, 0);
       });
 
       return () => {
@@ -99,6 +146,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const emailNorm = email.trim().toLowerCase();
 
     if (isSupabaseConfigured && supabase) {
+      try {
+        localStorage.removeItem(LEGACY_RUNTIME_CONFIG_KEY);
+      } catch {
+        // Ignora falha de armazenamento
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: emailNorm,
         password,
@@ -109,24 +162,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error('Falha ao autenticar usuário.');
       }
 
-      const { data: row, error: perfilErr } = await supabase
+      const { data: row } = await supabase
         .from('perfis_acesso')
         .select('*')
         .eq('id', data.user.id)
-        .eq('ativo', true)
         .maybeSingle();
 
-      if (perfilErr) throw perfilErr;
-      if (!row) {
-        await supabase.auth.signOut();
-        throw new Error(
-          'Seu usuário não possui registro ativo na tabela perfis_acesso. Solicite liberação ao Administrador.'
-        );
+      if (row) {
+        const perfilRow = row as PerfilAcesso;
+        if (!perfilRow.ativo) {
+          await supabase.auth.signOut();
+          throw new Error(
+            'Seu usuário está desativado na tabela perfis_acesso. Solicite liberação ao Administrador.'
+          );
+        }
+        setPerfil(perfilRow);
+        return perfilRow;
       }
 
-      const perfilAtivo = row as PerfilAcesso;
-      setPerfil(perfilAtivo);
-      return perfilAtivo;
+      const perfilFallback = construirPerfilFallback(data.user);
+      setPerfil(perfilFallback);
+      return perfilFallback;
     }
 
     // Modo Local / Demonstração
