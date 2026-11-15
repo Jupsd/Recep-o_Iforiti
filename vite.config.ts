@@ -16,8 +16,8 @@ export default defineConfig({
         short_name: 'Ilé Iforití',
         description:
           'Sistema digital de senhas, fila ao vivo e gestão de atendimentos espirituais do Terreiro.',
-        theme_color: '#0f5132',
-        background_color: '#f8fafc',
+        theme_color: '#0369a1',
+        background_color: '#f0f9ff',
         display: 'standalone',
         orientation: 'portrait',
         start_url: basePath,

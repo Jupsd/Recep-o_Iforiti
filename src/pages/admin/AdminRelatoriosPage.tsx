@@ -23,6 +23,7 @@ import {
   formatarDataBR,
   formatarHoraBR,
   formatarSenha,
+  gerarMensagemWhatsAppOrientacoes,
   hojeISO,
   limparDigitos,
   STATUS_ATENDIMENTO_LABEL,
@@ -31,6 +32,7 @@ import { exportarRelatorioAtendimentosPDF } from '../../lib/pdfExport';
 import {
   consultarRelatorioAtendimentos,
   excluirAtendimento,
+  excluirGira,
   listarEntidades,
   listarEquipeEspiritual,
   listarGiras,
@@ -177,6 +179,29 @@ export function AdminRelatoriosPage() {
       setErro(extrairMensagemErro(err, 'Erro ao excluir atendimento.'));
     } finally {
       setExcluindoId(null);
+    }
+  }
+
+  async function handleExcluirGiraSelecionada() {
+    if (!giraId) return;
+    const alvo = giras.find((g) => g.id === giraId);
+    const titulo = alvo ? `${alvo.titulo} (${formatarDataBR(alvo.data_gira)})` : 'esta gira';
+    if (
+      !window.confirm(
+        `Tem certeza que deseja excluir permanentemente a gira "${titulo}"?\n\nEsta ação apagará a gira e quaisquer atendimentos vinculados a ela.`
+      )
+    ) {
+      return;
+    }
+    setCarregando(true);
+    setErro(null);
+    try {
+      await excluirGira(giraId);
+      setGiraId('');
+      await buscarDados();
+    } catch (err) {
+      setErro(extrairMensagemErro(err, 'Erro ao excluir gira.'));
+      setCarregando(false);
     }
   }
 
@@ -490,12 +515,25 @@ export function AdminRelatoriosPage() {
                   className="w-full min-h-[42px] px-3 rounded-xl border border-slate-300 bg-white text-sm"
                 >
                   <option value="">Todas as Giras</option>
-                  {giras.map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {formatarDataBR(g.data_gira)} — {g.titulo} ({g.status})
-                    </option>
-                  ))}
+                  {giras.map((g) => {
+                    const hora = g.aberta_em ? ` às ${formatarHoraBR(g.aberta_em)}` : '';
+                    return (
+                      <option key={g.id} value={g.id}>
+                        {formatarDataBR(g.data_gira)}{hora} — {g.titulo} ({g.status})
+                      </option>
+                    );
+                  })}
                 </select>
+                {giraId && (
+                  <button
+                    type="button"
+                    onClick={handleExcluirGiraSelecionada}
+                    className="mt-1 text-[11px] text-red-600 hover:text-red-800 font-bold inline-flex items-center gap-1 transition"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>Excluir gira selecionada</span>
+                  </button>
+                )}
               </div>
 
               <div>
@@ -759,10 +797,21 @@ export function AdminRelatoriosPage() {
 
                       {digitosTel.length >= 10 && (
                         <a
-                          href={`https://wa.me/55${digitosTel}`}
+                          href={`https://wa.me/55${digitosTel}?text=${encodeURIComponent(
+                            gerarMensagemWhatsAppOrientacoes({
+                              consulenteNome: r.consulente_nome,
+                              numeroSenha: r.numero_senha,
+                              nomeEntidade: r.nome_entidade,
+                              mediumNome: r.medium_nome,
+                              dataGira: r.data_gira,
+                              giraTitulo: r.gira_titulo,
+                              orientacoes: r.orientacoes,
+                            })
+                          )}`}
                           target="_blank"
                           rel="noreferrer"
                           className="min-h-[38px] px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-bold inline-flex items-center gap-1 transition"
+                          title="Enviar dados do atendimento no WhatsApp"
                         >
                           <MessageCircle className="w-3.5 h-3.5" />
                           <span>WhatsApp</span>

@@ -1169,6 +1169,22 @@ export async function encerrarGira(giraId: string): Promise<void> {
   salvarLocalDb(db);
 }
 
+export async function excluirGira(giraId: string): Promise<void> {
+  if (isSupabaseConfigured && supabase) {
+    const { error } = await supabase.from('giras').delete().eq('id', giraId);
+    if (error) {
+      throw new Error(`Falha ao excluir gira: ${error.message}`);
+    }
+    return;
+  }
+
+  const db = lerLocalDb();
+  db.giras = db.giras.filter((g) => g.id !== giraId);
+  db.gira_escalas = db.gira_escalas.filter((ge) => ge.gira_id !== giraId);
+  db.atendimentos = db.atendimentos.filter((a) => a.gira_id !== giraId);
+  salvarLocalDb(db);
+}
+
 // --- Cadastros Base ---
 
 export async function listarEntidades(): Promise<Entidade[]> {

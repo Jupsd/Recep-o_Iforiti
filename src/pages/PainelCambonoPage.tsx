@@ -28,12 +28,15 @@ import {
 import { FichaConsulenteModal } from '../components/FichaConsulenteModal';
 import { useAuth } from '../contexts/AuthContext';
 import {
+  desbloquearAudio,
   extrairMensagemErro,
   falarChamadaVoz,
   formatarDataBR,
   formatarHoraBR,
   formatarSenha,
   formatarTelefone,
+  gerarMensagemWhatsAppChamada,
+  gerarMensagemWhatsAppOrientacoes,
   limparDigitos,
   LOGO_TERREIRO_URL,
   TERREIRO_NOME,
@@ -435,7 +438,10 @@ export function PainelCambonoPage() {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setVozAtiva((v) => !v)}
+              onClick={() => {
+                desbloquearAudio();
+                setVozAtiva((v) => !v);
+              }}
               title={vozAtiva ? 'Desativar chamada por voz' : 'Ativar chamada por voz'}
               className={`min-h-[42px] px-3 rounded-xl border text-xs font-bold inline-flex items-center gap-1.5 transition ${
                 vozAtiva
@@ -757,10 +763,28 @@ export function PainelCambonoPage() {
                           <div className="flex flex-wrap items-center gap-1.5">
                             {digitosTel.length >= 10 && (
                               <a
-                                href={`https://wa.me/55${digitosTel}`}
+                                href={`https://wa.me/55${digitosTel}?text=${encodeURIComponent(
+                                  item.orientacoes
+                                    ? gerarMensagemWhatsAppOrientacoes({
+                                        consulenteNome: item.consulente_nome,
+                                        numeroSenha: item.numero_senha,
+                                        nomeEntidade: item.nome_entidade,
+                                        mediumNome: item.medium_nome,
+                                        dataGira: giraAberta?.data_gira,
+                                        giraTitulo: giraAberta?.titulo,
+                                        orientacoes: item.orientacoes,
+                                      })
+                                    : gerarMensagemWhatsAppChamada({
+                                        consulenteNome: item.consulente_nome,
+                                        numeroSenha: item.numero_senha,
+                                        nomeEntidade: item.nome_entidade,
+                                        mediumNome: item.medium_nome,
+                                      })
+                                )}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold hover:bg-emerald-100"
+                                title="Enviar mensagem no WhatsApp"
                               >
                                 <MessageCircle className="w-3.5 h-3.5" />
                                 <span>WhatsApp</span>
@@ -993,11 +1017,18 @@ export function PainelCambonoPage() {
 
                             {digitosTel.length >= 10 && (
                               <a
-                                href={`https://wa.me/55${digitosTel}`}
+                                href={`https://wa.me/55${digitosTel}?text=${encodeURIComponent(
+                                  gerarMensagemWhatsAppChamada({
+                                    consulenteNome: item.consulente_nome,
+                                    numeroSenha: item.numero_senha,
+                                    nomeEntidade: item.nome_entidade,
+                                    mediumNome: item.medium_nome,
+                                  })
+                                )}`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold hover:bg-emerald-100"
-                                title="Chamar no WhatsApp"
+                                title="Chamar consulente no WhatsApp"
                               >
                                 <MessageCircle className="w-3.5 h-3.5" />
                                 <span>WhatsApp</span>

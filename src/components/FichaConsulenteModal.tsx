@@ -17,6 +17,7 @@ import {
   formatarDataBR,
   formatarSenha,
   formatarTelefone,
+  gerarMensagemWhatsAppOrientacoes,
   limparDigitos,
   STATUS_ATENDIMENTO_LABEL,
   TERREIRO_NOME,
@@ -186,18 +187,15 @@ export function FichaConsulenteModal({
   const giraExibida =
     giraTitulo || (atendimento as Partial<AtendimentoDetalhado>).gira_titulo || '';
 
-  const mensagemWhatsApp = [
-    `*${TERREIRO_NOME}*`,
-    `Olá, *${nome.trim() || atendimento.consulente_nome}*! Axé! 🌿`,
-    '',
-    `Seguem as orientações registradas no seu atendimento (${formatarSenha(atendimento.numero_senha)}):`,
-    giraExibida ? `📅 Gira: ${giraExibida} (${formatarDataBR(dataExibida)})` : `📅 Data: ${formatarDataBR(dataExibida)}`,
-    `✨ Entidade: ${entidadeExibida}${mediumExibido ? ` (Médium: ${mediumExibido})` : ''}`,
-    '',
-    orientacoes.trim()
-      ? `*Orientações:*\n${orientacoes.trim()}`
-      : 'Atendimento registrado em nosso sistema.',
-  ].join('\n');
+  const mensagemWhatsApp = gerarMensagemWhatsAppOrientacoes({
+    consulenteNome: nome.trim() || atendimento.consulente_nome,
+    numeroSenha: atendimento.numero_senha,
+    nomeEntidade: entidadeExibida,
+    mediumNome: mediumExibido,
+    dataGira: dataExibida,
+    giraTitulo: giraExibida,
+    orientacoes: orientacoes.trim() || null,
+  });
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/65 backdrop-blur-sm flex items-end sm:items-center justify-center p-2 sm:p-4">

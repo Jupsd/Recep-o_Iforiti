@@ -18,6 +18,7 @@ import {
   obterComprovanteAtivoLocal,
 } from '../lib/comprovanteStorage';
 import {
+  desbloquearAudio,
   formatarDataBR,
   formatarHoraBR,
   formatarSenha,
@@ -26,6 +27,7 @@ import {
   STATUS_ATENDIMENTO_LABEL,
   TERREIRO_NOME,
   TERREIRO_SUBTITULO,
+  tocarSinoChamada,
 } from '../lib/format';
 import { getAtendimentoStatusEPosicao, subscribeAtendimento } from '../services/dataService';
 import type { ComprovanteSenha, StatusAtendimento } from '../types/database';
@@ -83,6 +85,7 @@ export function SenhaPage() {
     typeof navigator !== 'undefined' ? navigator.onLine : true
   );
   const [sincronizando, setSincronizando] = useState(false);
+  const [somAtivado, setSomAtivado] = useState(false);
 
   const statusAnteriorRef = useRef<StatusAtendimento | null>(comprovante?.status ?? null);
 
@@ -262,6 +265,25 @@ export function SenhaPage() {
         <p className="text-lg font-bold text-white">
           {comprovante.gira_titulo} • {formatarDataBR(comprovante.data_gira)}
         </p>
+
+        <div className="mt-2.5">
+          <button
+            type="button"
+            onClick={() => {
+              desbloquearAudio();
+              tocarSinoChamada();
+              setSomAtivado(true);
+            }}
+            className="w-full min-h-[38px] px-3 rounded-xl bg-white/15 hover:bg-white/25 border border-white/25 text-white text-xs font-bold inline-flex items-center justify-center gap-2 transition"
+          >
+            <BellRing className="w-3.5 h-3.5 text-amber-300" />
+            <span>
+              {somAtivado
+                ? 'Sino de Chamada Ativado (Toque para testar)'
+                : 'Toque para testar/ativar som no iPhone e Celular'}
+            </span>
+          </button>
+        </div>
       </header>
 
       <main className="max-w-lg mx-auto px-4 space-y-4">

@@ -77,51 +77,58 @@ export function extrairMensagemErro(error: unknown, fallback = 'Erro ao processa
   return raw;
 }
 
-export function notificarChamadaNoDispositivo(): void {
-  try {
-    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-      navigator.vibrate([300, 120, 300, 120, 400]);
-    }
-  } catch {
-    // Vibração opcional não suportada
-  }
+export { desbloquearAudio, falarChamadaVoz, tocarSinoChamada } from './sound';
+export { tocarSinoChamada as notificarChamadaNoDispositivo } from './sound';
 
-  try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
-    const now = ctx.currentTime;
-
-    const notas = [523.25, 659.25, 783.99];
-    notas.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, now + i * 0.16);
-      gain.gain.setValueAtTime(0.001, now + i * 0.16);
-      gain.gain.exponentialRampToValueAtTime(0.18, now + i * 0.16 + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.16 + 0.35);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now + i * 0.16);
-      osc.stop(now + i * 0.16 + 0.36);
-    });
-  } catch {
-    // Áudio opcional bloqueado pelo navegador
-  }
+export function gerarMensagemWhatsAppChamada(params: {
+  consulenteNome: string;
+  numeroSenha: number;
+  nomeEntidade: string;
+  mediumNome?: string | null;
+}): string {
+  const nomeLimpo = params.consulenteNome.replace(/\s*\|\|\s*.*$/, '').trim();
+  const partes = [
+    `*${TERREIRO_NOME}*`,
+    `Olá, *${nomeLimpo}*! Axé! 🌿`,
+    '',
+    `🔔 Sua senha *${formatarSenha(params.numeroSenha)}* está sendo chamada agora para atendimento com *${params.nomeEntidade}*${
+      params.mediumNome ? ` (Médium: ${params.mediumNome})` : ''
+    }.`,
+    '',
+    'Por favor, dirija-se à sala de atendimento.',
+  ];
+  return partes.join('\n');
 }
 
-export function falarChamadaVoz(numeroSenha: number, nome: string, entidade: string): void {
-  try {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const texto = `Senha número ${numeroSenha}. ${nome}. Atendimento com ${entidade}.`;
-    const utter = new SpeechSynthesisUtterance(texto);
-    utter.lang = 'pt-BR';
-    utter.rate = 0.95;
-    window.speechSynthesis.speak(utter);
-  } catch {
-    // Síntese de voz opcional
+export function gerarMensagemWhatsAppOrientacoes(params: {
+  consulenteNome: string;
+  numeroSenha: number;
+  nomeEntidade?: string | null;
+  mediumNome?: string | null;
+  dataGira?: string | null;
+  giraTitulo?: string | null;
+  orientacoes?: string | null;
+}): string {
+  const nomeLimpo = params.consulenteNome.replace(/\s*\|\|\s*.*$/, '').trim();
+  const linhas = [
+    `*${TERREIRO_NOME}*`,
+    `Olá, *${nomeLimpo}*! Axé! 🌿`,
+    '',
+    `Seguem as informações do seu atendimento (${formatarSenha(params.numeroSenha)}):`,
+    params.giraTitulo
+      ? `📅 Gira: ${params.giraTitulo}${params.dataGira ? ` (${formatarDataBR(params.dataGira)})` : ''}`
+      : params.dataGira
+      ? `📅 Data: ${formatarDataBR(params.dataGira)}`
+      : '',
+    params.nomeEntidade
+      ? `✨ Entidade: ${params.nomeEntidade}${params.mediumNome ? ` (Médium: ${params.mediumNome})` : ''}`
+      : '',
+  ];
+
+  if (params.orientacoes && params.orientacoes.trim()) {
+    linhas.push('', `*Orientações:*\n${params.orientacoes.trim()}`);
   }
+
+  return linhas.filter(Boolean).join('\n');
 }
 
