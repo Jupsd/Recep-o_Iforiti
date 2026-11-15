@@ -481,8 +481,6 @@ export function PainelCambonoPage() {
         outroTerreiro: manualOutroTerreiro,
         nomeOutroTerreiro: manualOutroTerreiro ? manualNomeOutroTerreiro.trim() : null,
       });
-        orientacoes: manualOrientacoes.trim() || undefined,
-      });
       setModalManualAberto(false);
       setEscalaAtivaId(manualEscalaId);
       setFeedbackManual(
