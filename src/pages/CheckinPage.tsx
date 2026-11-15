@@ -10,7 +10,6 @@ import {
   Lock,
   RefreshCw,
   ShieldCheck,
-  Sparkles,
   Ticket,
   UserCheck,
 } from 'lucide-react';
