@@ -20,6 +20,10 @@ export interface FichaConsulentePDFParams {
   numeroSenha: number;
   nome: string;
   telefone?: string | null;
+  idade?: number | null;
+  preferencial?: boolean;
+  outroTerreiro?: boolean;
+  nomeOutroTerreiro?: string | null;
   primeiraVez: boolean;
   entidade: string;
   medium?: string;
@@ -366,8 +370,9 @@ export function exportarFichaConsulentePDF(params: FichaConsulentePDFParams): vo
 
     <div class="box">
       <p class="section-title">Dados do Consulente</p>
-      <p style="margin:2px 0;"><strong>Nome:</strong> ${escapeHtml(params.nome)} ${params.primeiraVez ? '<span class="badge">1ª Vez no Terreiro</span>' : ''}</p>
+      <p style="margin:2px 0;"><strong>Nome:</strong> ${escapeHtml(params.nome)} ${params.primeiraVez ? '<span class="badge">1ª Vez no Terreiro</span>' : ''} ${params.idade ? `<span class="badge">${params.idade} anos</span>` : ''} ${params.preferencial || (params.idade && params.idade >= 60) ? '<span class="badge" style="background:#fef3c7;color:#78350f">Prioridade Idoso</span>' : ''}</p>
       <p style="margin:2px 0;"><strong>WhatsApp / Telefone:</strong> ${escapeHtml(params.telefone || 'Não informado')}</p>
+      ${params.outroTerreiro ? `<p style="margin:2px 0;"><strong>Outro Terreiro / Casa Espiritual:</strong> ${escapeHtml(params.nomeOutroTerreiro || 'Sim (Outro terreiro)')}</p>` : ''}
       <p style="margin:2px 0;"><strong>Data / Gira:</strong> ${escapeHtml(formatarDataBR(params.dataGira))}${params.giraTitulo ? ` • ${escapeHtml(params.giraTitulo)}` : ''}</p>
       <p style="margin:2px 0;"><strong>Entidade:</strong> ${escapeHtml(params.entidade)}${params.medium ? ` • <strong>Médium:</strong> ${escapeHtml(params.medium)}` : ''}${params.cambono ? ` • <strong>Cambono:</strong> ${escapeHtml(params.cambono)}` : ''}</p>
       <p style="margin:2px 0;"><strong>Status:</strong> <span class="badge">${escapeHtml(STATUS_ATENDIMENTO_LABEL[params.status])}</span></p>

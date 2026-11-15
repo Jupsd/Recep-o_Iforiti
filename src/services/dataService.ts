@@ -26,7 +26,109 @@ import type {
 const LOCAL_DB_KEY = 'iforiti_local_db_v2';
 const BROADCAST_CHANNEL_NAME = 'iforiti_realtime_v1';
 const ORIENTACOES_CACHE_KEY = 'iforiti_orientacoes_v1';
+const METADATA_CACHE_KEY = 'iforiti_metadata_v1';
 const SEPARADOR_ORIENTACAO = ' || ';
+const TAG_META_PREFIX = '<!--META:';
+const TAG_META_SUFFIX = '-->';
+
+export interface MetadadosConsulente {
+  idade?: number | null;
+  preferencial?: boolean;
+  outro_terreiro?: boolean;
+  nome_outro_terreiro?: string | null;
+}
+
+export function codificarMetadados(
+  meta?: MetadadosConsulente,
+  texto?: string | null
+): string | null {
+  const metaObj: MetadadosConsulente = {};
+  if (meta?.idade !== undefined && meta.idade !== null && !Number.isNaN(Number(meta.idade))) {
+    metaObj.idade = Number(meta.idade);
+    if (metaObj.idade >= 60) {
+      metaObj.preferencial = true;
+    }
+  }
+  if (meta?.preferencial !== undefined) {
+    metaObj.preferencial = Boolean(meta.preferencial);
+  }
+  if (meta?.outro_terreiro !== undefined) {
+    metaObj.outro_terreiro = Boolean(meta.outro_terreiro);
+  }
+  if (meta?.nome_outro_terreiro) {
+    metaObj.nome_outro_terreiro = String(meta.nome_outro_terreiro).trim().slice(0, 100);
+  }
+
+  const { textoLimpo } = decodificarMetadados(texto);
+  const temMeta = Object.keys(metaObj).length > 0;
+
+  if (!temMeta && !textoLimpo) return null;
+  if (!temMeta) return textoLimpo;
+
+  const metaString = `${TAG_META_PREFIX}${JSON.stringify(metaObj)}${TAG_META_SUFFIX}`;
+  return textoLimpo ? `${metaString}\n${textoLimpo}` : metaString;
+}
+
+export function decodificarMetadados(textoBruto?: string | null): {
+  meta: MetadadosConsulente;
+  textoLimpo: string | null;
+} {
+  if (!textoBruto) return { meta: {}, textoLimpo: null };
+
+  const startIdx = textoBruto.indexOf(TAG_META_PREFIX);
+  if (startIdx === -1) {
+    return { meta: {}, textoLimpo: textoBruto.trim() || null };
+  }
+
+  const endIdx = textoBruto.indexOf(TAG_META_SUFFIX, startIdx + TAG_META_PREFIX.length);
+  if (endIdx === -1) {
+    return { meta: {}, textoLimpo: textoBruto.trim() || null };
+  }
+
+  const jsonStr = textoBruto.slice(startIdx + TAG_META_PREFIX.length, endIdx);
+  let meta: MetadadosConsulente = {};
+  try {
+    meta = JSON.parse(jsonStr);
+  } catch {
+    meta = {};
+  }
+
+  const antes = textoBruto.slice(0, startIdx);
+  const depois = textoBruto.slice(endIdx + TAG_META_SUFFIX.length);
+  const textoRestante = `${antes}${depois}`.trim();
+
+  return {
+    meta,
+    textoLimpo: textoRestante || null,
+  };
+}
+
+function lerCacheMetadados(): Record<string, MetadadosConsulente> {
+  try {
+    if (typeof window === 'undefined') return {};
+    const raw = localStorage.getItem(METADATA_CACHE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, MetadadosConsulente>;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function salvarCacheMetadados(atendimentoId: string, meta?: MetadadosConsulente): void {
+  try {
+    if (typeof window === 'undefined') return;
+    const cache = lerCacheMetadados();
+    if (meta && Object.keys(meta).length > 0) {
+      cache[atendimentoId] = { ...(cache[atendimentoId] || {}), ...meta };
+    } else {
+      delete cache[atendimentoId];
+    }
+    localStorage.setItem(METADATA_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // Ignore storage quota errors
+  }
+}
 
 function lerCacheOrientacoes(): Record<string, string> {
   try {
@@ -107,17 +209,50 @@ function combinarNomeEOrientacoesFallback(nome: string, orientacoes?: string | n
 
 function normalizarAtendimento(
   row: Atendimento,
-  cache: Record<string, string> = lerCacheOrientacoes()
+  cache: Record<string, string> = lerCacheOrientacoes(),
+  metaCache: Record<string, MetadadosConsulente> = lerCacheMetadados()
 ): Atendimento {
-  const { nome, orientacoes } = separarNomeEOrientacoes(
+  const { nome, orientacoes: orientacoesBrutas } = separarNomeEOrientacoes(
     row.consulente_nome,
     row.orientacoes,
     cache[row.id]
   );
+
+  const { meta: metaDecodificado, textoLimpo } = decodificarMetadados(orientacoesBrutas);
+  const metaLocal = metaCache[row.id] || {};
+
+  const idade =
+    row.idade ??
+    metaDecodificado.idade ??
+    metaLocal.idade ??
+    null;
+
+  const preferencial =
+    row.preferencial ??
+    metaDecodificado.preferencial ??
+    metaLocal.preferencial ??
+    (idade !== null && idade >= 60);
+
+  const outro_terreiro =
+    row.outro_terreiro ??
+    metaDecodificado.outro_terreiro ??
+    metaLocal.outro_terreiro ??
+    false;
+
+  const nome_outro_terreiro =
+    row.nome_outro_terreiro ??
+    metaDecodificado.nome_outro_terreiro ??
+    metaLocal.nome_outro_terreiro ??
+    null;
+
   return {
     ...row,
     consulente_nome: nome,
-    orientacoes,
+    orientacoes: textoLimpo,
+    idade,
+    preferencial,
+    outro_terreiro,
+    nome_outro_terreiro,
   };
 }
 
@@ -339,12 +474,21 @@ export async function gerarSenhaConsulente(params: {
   primeiraVez: boolean;
   origem?: OrigemCheckin;
   orientacoes?: string;
+  idade?: number | null;
+  preferencial?: boolean;
+  outroTerreiro?: boolean;
+  nomeOutroTerreiro?: string | null;
 }): Promise<ComprovanteSenha> {
   const origem: OrigemCheckin = params.origem ?? 'QRCODE';
   const nomeSanitizado = params.nome.replace(/\s*\|\|\s*/g, ' - ').trim();
   const nomeComparacao = normalizarNomeComparacao(nomeSanitizado);
   const orientacoesSanitizadas = params.orientacoes?.trim() || null;
   const telLimpo = limparDigitos(params.telefone ?? '');
+  const idadeNum =
+    params.idade !== undefined && params.idade !== null && !Number.isNaN(Number(params.idade))
+      ? Number(params.idade)
+      : null;
+  const prefCalc = Boolean(params.preferencial || (idadeNum !== null && idadeNum >= 60));
 
   if (isSupabaseConfigured && supabase) {
     const { data: escalaRow } = await supabase
@@ -428,19 +572,35 @@ export async function gerarSenhaConsulente(params: {
       rawRow.orientacoes,
       cache[rawRow.atendimento_id]
     );
+
     const comprovante: ComprovanteSenha = {
       ...rawRow,
       consulente_nome: nome,
       orientacoes,
+      idade: idadeNum,
+      preferencial: prefCalc,
+      outro_terreiro: params.outroTerreiro,
+      nome_outro_terreiro: params.nomeOutroTerreiro,
     };
 
-    if (orientacoesSanitizadas) {
+    salvarCacheMetadados(comprovante.atendimento_id, {
+      idade: idadeNum,
+      preferencial: prefCalc,
+      outro_terreiro: params.outroTerreiro,
+      nome_outro_terreiro: params.nomeOutroTerreiro,
+    });
+
+    if (orientacoesSanitizadas || idadeNum !== null || params.outroTerreiro !== undefined) {
       await salvarFichaConsulente({
         atendimentoId: comprovante.atendimento_id,
         nome: comprovante.consulente_nome,
         telefone: comprovante.consulente_telefone,
         primeiraVez: comprovante.primeira_vez,
         orientacoes: orientacoesSanitizadas,
+        idade: idadeNum,
+        preferencial: prefCalc,
+        outroTerreiro: params.outroTerreiro,
+        nomeOutroTerreiro: params.nomeOutroTerreiro,
       });
       comprovante.orientacoes = orientacoesSanitizadas;
     }
@@ -506,6 +666,10 @@ export async function gerarSenhaConsulente(params: {
       status: existente.status,
       consulente_nome: existente.consulente_nome,
       consulente_telefone: existente.consulente_telefone,
+      idade: existente.idade,
+      preferencial: existente.preferencial,
+      outro_terreiro: existente.outro_terreiro,
+      nome_outro_terreiro: existente.nome_outro_terreiro,
       primeira_vez: existente.primeira_vez,
       orientacoes: existente.orientacoes ?? null,
       origem: existente.origem,
@@ -536,6 +700,10 @@ export async function gerarSenhaConsulente(params: {
     numero_senha: maxNumero + 1,
     consulente_nome: nomeSanitizado,
     consulente_telefone: params.telefone?.trim() || null,
+    idade: idadeNum,
+    preferencial: prefCalc,
+    outro_terreiro: params.outroTerreiro,
+    nome_outro_terreiro: params.nomeOutroTerreiro,
     primeira_vez: params.primeiraVez,
     orientacoes: orientacoesSanitizadas,
     status: 'AGUARDANDO',
@@ -547,6 +715,13 @@ export async function gerarSenhaConsulente(params: {
 
   db.atendimentos.push(novo);
   salvarLocalDb(db);
+  salvarCacheMetadados(novo.id, {
+    idade: idadeNum,
+    preferencial: prefCalc,
+    outro_terreiro: params.outroTerreiro,
+    nome_outro_terreiro: params.nomeOutroTerreiro,
+  });
+
   if (orientacoesSanitizadas) {
     salvarCacheOrientacao(novo.id, orientacoesSanitizadas);
   }
@@ -559,6 +734,10 @@ export async function gerarSenhaConsulente(params: {
     status: novo.status,
     consulente_nome: novo.consulente_nome,
     consulente_telefone: novo.consulente_telefone,
+    idade: novo.idade,
+    preferencial: novo.preferencial,
+    outro_terreiro: novo.outro_terreiro,
+    nome_outro_terreiro: novo.nome_outro_terreiro,
     primeira_vez: novo.primeira_vez,
     orientacoes: novo.orientacoes ?? null,
     origem: novo.origem,
@@ -770,6 +949,10 @@ export async function salvarFichaConsulente(params: {
   telefone?: string | null;
   primeiraVez: boolean;
   orientacoes?: string | null;
+  idade?: number | null;
+  preferencial?: boolean;
+  outroTerreiro?: boolean;
+  nomeOutroTerreiro?: string | null;
 }): Promise<void> {
   const nomeLimpo = params.nome.replace(/\s*\|\|\s*/g, ' - ').trim();
   if (!nomeLimpo) {
@@ -777,8 +960,29 @@ export async function salvarFichaConsulente(params: {
   }
   const telLimpo = params.telefone?.trim() || null;
   const orientacoesLimpas = params.orientacoes?.trim() || null;
+  const idadeNum =
+    params.idade !== undefined && params.idade !== null && !Number.isNaN(Number(params.idade))
+      ? Number(params.idade)
+      : null;
+  const prefCalc = Boolean(params.preferencial || (idadeNum !== null && idadeNum >= 60));
 
   salvarCacheOrientacao(params.atendimentoId, orientacoesLimpas);
+  salvarCacheMetadados(params.atendimentoId, {
+    idade: idadeNum,
+    preferencial: prefCalc,
+    outro_terreiro: params.outroTerreiro,
+    nome_outro_terreiro: params.nomeOutroTerreiro,
+  });
+
+  const orientacoesComMeta = codificarMetadados(
+    {
+      idade: idadeNum,
+      preferencial: prefCalc,
+      outro_terreiro: params.outroTerreiro,
+      nome_outro_terreiro: params.nomeOutroTerreiro,
+    },
+    orientacoesLimpas
+  );
 
   if (isSupabaseConfigured && supabase) {
     const { error } = await supabase
@@ -787,7 +991,7 @@ export async function salvarFichaConsulente(params: {
         consulente_nome: nomeLimpo,
         consulente_telefone: telLimpo,
         primeira_vez: params.primeiraVez,
-        orientacoes: orientacoesLimpas,
+        orientacoes: orientacoesComMeta,
       })
       .eq('id', params.atendimentoId);
 
@@ -801,7 +1005,7 @@ export async function salvarFichaConsulente(params: {
       throw error;
     }
 
-    const nomeFallback = combinarNomeEOrientacoesFallback(nomeLimpo, orientacoesLimpas);
+    const nomeFallback = combinarNomeEOrientacoesFallback(nomeLimpo, orientacoesComMeta);
     const { error: fallbackErr } = await supabase
       .from('atendimentos')
       .update({
@@ -824,6 +1028,10 @@ export async function salvarFichaConsulente(params: {
       consulente_telefone: telLimpo,
       primeira_vez: params.primeiraVez,
       orientacoes: orientacoesLimpas,
+      idade: idadeNum,
+      preferencial: prefCalc,
+      outro_terreiro: params.outroTerreiro,
+      nome_outro_terreiro: params.nomeOutroTerreiro,
     };
     salvarLocalDb(db);
   }
@@ -831,6 +1039,7 @@ export async function salvarFichaConsulente(params: {
 
 export async function excluirAtendimento(atendimentoId: string): Promise<void> {
   salvarCacheOrientacao(atendimentoId, null);
+  salvarCacheMetadados(atendimentoId, undefined);
 
   if (isSupabaseConfigured && supabase) {
     const { error } = await supabase
@@ -1570,4 +1779,69 @@ export async function buscarHistoricoConsulente(params: {
 export function getLocalSeedProfiles(): PerfilAcesso[] {
   return lerLocalDb().perfis_acesso;
 }
+
+export interface DadosConsulenteVerificado {
+  encontrado: boolean;
+  consulente_nome?: string;
+  idade?: number | null;
+  preferencial?: boolean;
+  outro_terreiro?: boolean;
+  nome_outro_terreiro?: string | null;
+  jaNaGiraAberta?: boolean;
+  numeroSenhaGiraAberta?: number;
+}
+
+export async function verificarTelefoneCadastrado(telefone: string): Promise<DadosConsulenteVerificado> {
+  const telLimpo = limparDigitos(telefone);
+  if (telLimpo.length < 10) {
+    return { encontrado: false };
+  }
+
+  // 1. Verificar atendimentos da gira aberta primeiro
+  try {
+    const atendimentosGiraAberta = await getAtendimentosGiraAberta();
+    const naGiraAtual = atendimentosGiraAberta.find(
+      (a) => limparDigitos(a.consulente_telefone ?? '') === telLimpo
+    );
+    if (naGiraAtual) {
+      return {
+        encontrado: true,
+        consulente_nome: naGiraAtual.consulente_nome,
+        idade: naGiraAtual.idade,
+        preferencial: naGiraAtual.preferencial,
+        outro_terreiro: naGiraAtual.outro_terreiro,
+        nome_outro_terreiro: naGiraAtual.nome_outro_terreiro,
+        jaNaGiraAberta: true,
+        numeroSenhaGiraAberta: naGiraAtual.numero_senha,
+      };
+    }
+  } catch {
+    // ignora e continua para o histórico
+  }
+
+  // 2. Consultar histórico anterior
+  try {
+    const historico = await consultarRelatorioAtendimentos({ busca: telLimpo });
+    const match = historico.find(
+      (h) => limparDigitos(h.consulente_telefone ?? '') === telLimpo
+    );
+
+    if (match) {
+      return {
+        encontrado: true,
+        consulente_nome: match.consulente_nome,
+        idade: match.idade,
+        preferencial: match.preferencial,
+        outro_terreiro: match.outro_terreiro,
+        nome_outro_terreiro: match.nome_outro_terreiro,
+        jaNaGiraAberta: false,
+      };
+    }
+  } catch {
+    // ignore
+  }
+
+  return { encontrado: false };
+}
+
 

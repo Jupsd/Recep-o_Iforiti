@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
+  Award,
+  Building2,
   Check,
   FileDown,
   FileText,
@@ -78,6 +80,13 @@ export function FichaConsulenteModal({
 
   const [nome, setNome] = useState(atendimento.consulente_nome);
   const [telefone, setTelefone] = useState(atendimento.consulente_telefone ?? '');
+  const [idade, setIdade] = useState(
+    atendimento.idade !== undefined && atendimento.idade !== null ? String(atendimento.idade) : ''
+  );
+  const [outroTerreiro, setOutroTerreiro] = useState(Boolean(atendimento.outro_terreiro));
+  const [nomeOutroTerreiro, setNomeOutroTerreiro] = useState(
+    atendimento.nome_outro_terreiro ?? ''
+  );
   const [primeiraVez, setPrimeiraVez] = useState(atendimento.primeira_vez);
   const [orientacoes, setOrientacoes] = useState(atendimento.orientacoes ?? '');
 
@@ -112,6 +121,11 @@ export function FichaConsulenteModal({
   useEffect(() => {
     setNome(atendimento.consulente_nome);
     setTelefone(atendimento.consulente_telefone ?? '');
+    setIdade(
+      atendimento.idade !== undefined && atendimento.idade !== null ? String(atendimento.idade) : ''
+    );
+    setOutroTerreiro(Boolean(atendimento.outro_terreiro));
+    setNomeOutroTerreiro(atendimento.nome_outro_terreiro ?? '');
     setPrimeiraVez(atendimento.primeira_vez);
     setOrientacoes(atendimento.orientacoes ?? '');
     setErro(null);
@@ -156,6 +170,14 @@ export function FichaConsulenteModal({
       return;
     }
 
+    if (outroTerreiro && !nomeOutroTerreiro.trim()) {
+      setErro('Informe o nome da outra casa espiritual ou terreiro.');
+      return;
+    }
+
+    const idadeNum = idade.trim() ? parseInt(idade, 10) : null;
+    const ehIdoso = idadeNum !== null && !Number.isNaN(idadeNum) && idadeNum >= 60;
+
     setSalvando(true);
     try {
       await salvarFichaConsulente({
@@ -164,6 +186,10 @@ export function FichaConsulenteModal({
         telefone: telefone.trim() || null,
         primeiraVez,
         orientacoes: orientacoes.trim() || null,
+        idade: idadeNum,
+        preferencial: ehIdoso,
+        outroTerreiro,
+        nomeOutroTerreiro: outroTerreiro ? nomeOutroTerreiro.trim() : null,
       });
       await onSalvo();
       onClose();
@@ -230,8 +256,8 @@ export function FichaConsulenteModal({
         {/* Corpo rolável */}
         <div className="overflow-y-auto p-5 space-y-5">
           <form id="form-ficha-consulente" onSubmit={handleSalvar} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              <div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              <div className="sm:col-span-2">
                 <label className="block text-xs font-bold uppercase text-slate-600 mb-1">
                   Nome Completo do Cliente *
                 </label>
@@ -255,6 +281,70 @@ export function FichaConsulenteModal({
                   placeholder="(65) 99999-9999"
                   className="w-full min-h-[44px] px-3.5 rounded-xl border-2 border-slate-300 bg-white text-sm font-semibold text-slate-900 focus:border-terreiro-600 focus:outline-none"
                 />
+              </div>
+            </div>
+
+            {/* Idade e Outro Terreiro */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold uppercase text-slate-600">
+                    Idade (anos)
+                  </label>
+                  {idade.trim() && parseInt(idade, 10) >= 60 && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                      <Award className="w-3 h-3 text-amber-700" />
+                      Idoso (60+) • Prioridade
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="number"
+                  min="1"
+                  max="120"
+                  value={idade}
+                  onChange={(e) => setIdade(e.target.value)}
+                  placeholder="Ex: 68"
+                  className={`w-full min-h-[44px] px-3.5 rounded-xl border-2 ${
+                    idade.trim() && parseInt(idade, 10) >= 60
+                      ? 'border-amber-400 bg-amber-50/30'
+                      : 'border-slate-300'
+                  } bg-white text-sm font-semibold text-slate-900 focus:border-terreiro-600 focus:outline-none`}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2.5 min-h-[44px] px-3 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={outroTerreiro}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setOutroTerreiro(checked);
+                      if (!checked) setNomeOutroTerreiro('');
+                    }}
+                    className="w-4 h-4 rounded text-terreiro-700"
+                  />
+                  <Building2 className="w-4 h-4 text-terreiro-700" />
+                  <span className="text-xs font-bold uppercase text-slate-700">
+                    É de outro terreiro / casa?
+                  </span>
+                </label>
+
+                {outroTerreiro && (
+                  <div className="p-2.5 rounded-xl bg-terreiro-50/70 border border-terreiro-200 space-y-1">
+                    <label className="block text-[11px] font-bold uppercase text-terreiro-900">
+                      Nome da outra casa espiritual *
+                    </label>
+                    <input
+                      type="text"
+                      value={nomeOutroTerreiro}
+                      onChange={(e) => setNomeOutroTerreiro(e.target.value)}
+                      placeholder="Ex: Ilé Àṣẹ..."
+                      className="w-full min-h-[40px] px-3 rounded-lg border border-terreiro-300 bg-white text-xs font-semibold focus:border-terreiro-600 focus:outline-none"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -364,11 +454,17 @@ export function FichaConsulenteModal({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() =>
+              onClick={() => {
+                const idadeNum = idade.trim() ? parseInt(idade, 10) : null;
+                const ehIdoso = idadeNum !== null && !Number.isNaN(idadeNum) && idadeNum >= 60;
                 exportarFichaConsulentePDF({
                   numeroSenha: atendimento.numero_senha,
                   nome: nome.trim() || atendimento.consulente_nome,
                   telefone: telefone.trim() || null,
+                  idade: idadeNum,
+                  preferencial: ehIdoso,
+                  outroTerreiro,
+                  nomeOutroTerreiro: outroTerreiro ? nomeOutroTerreiro.trim() : null,
                   primeiraVez,
                   entidade: entidadeExibida,
                   medium: mediumExibido,
@@ -378,8 +474,8 @@ export function FichaConsulenteModal({
                   status: atendimento.status,
                   orientacoes: orientacoes.trim() || null,
                   historico,
-                })
-              }
+                });
+              }}
               className="min-h-[44px] px-3.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-800 font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition"
             >
               <FileDown className="w-4 h-4" />

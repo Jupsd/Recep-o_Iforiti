@@ -61,6 +61,10 @@ export interface Atendimento {
   numero_senha: number;
   consulente_nome: string;
   consulente_telefone: string | null;
+  idade?: number | null;
+  preferencial?: boolean;
+  outro_terreiro?: boolean;
+  nome_outro_terreiro?: string | null;
   primeira_vez: boolean;
   orientacoes?: string | null;
   status: StatusAtendimento;
@@ -101,6 +105,10 @@ export interface ComprovanteSenha {
   status: StatusAtendimento;
   consulente_nome: string;
   consulente_telefone: string | null;
+  idade?: number | null;
+  preferencial?: boolean;
+  outro_terreiro?: boolean;
+  nome_outro_terreiro?: string | null;
   primeira_vez: boolean;
   orientacoes?: string | null;
   origem: OrigemCheckin;

@@ -2,7 +2,9 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
+  Award,
   BarChart3,
+  Building2,
   CalendarCog,
   Check,
   ChevronDown,
@@ -35,6 +37,7 @@ import {
   formatarHoraBR,
   formatarSenha,
   formatarTelefone,
+  validarTelefoneBR,
   gerarMensagemWhatsAppChamada,
   gerarMensagemWhatsAppOrientacoes,
   limparDigitos,
@@ -54,6 +57,7 @@ import {
   restaurarParaFila,
   salvarFichaConsulente,
   subscribeFilaGira,
+  verificarTelefoneCadastrado,
 } from '../services/dataService';
 import type { Atendimento, DisponibilidadeGira } from '../types/database';
 
@@ -107,6 +111,14 @@ export function PainelCambonoPage() {
   const [modalManualAberto, setModalManualAberto] = useState(false);
   const [manualNome, setManualNome] = useState('');
   const [manualTelefone, setManualTelefone] = useState('');
+  const [manualIdade, setManualIdade] = useState('');
+  const [manualOutroTerreiro, setManualOutroTerreiro] = useState(false);
+  const [manualNomeOutroTerreiro, setManualNomeOutroTerreiro] = useState('');
+  const [manualVerificandoTel, setManualVerificandoTel] = useState(false);
+  const [manualFeedbackTel, setManualFeedbackTel] = useState<{
+    tipo: 'sucesso' | 'aviso' | 'erro';
+    mensagem: string;
+  } | null>(null);
   const [manualPrimeiraVez, setManualPrimeiraVez] = useState(false);
   const [manualEscalaId, setManualEscalaId] = useState('');
   const [manualOrientacoes, setManualOrientacoes] = useState('');
@@ -199,7 +211,14 @@ export function PainelCambonoPage() {
 
   const aguardando = useMemo(
     () =>
-      filtrarPorBusca(aguardandoTotal).sort((a, b) => a.numero_senha - b.numero_senha),
+      filtrarPorBusca(aguardandoTotal).sort((a, b) => {
+        const aPref = Boolean(a.preferencial || (a.idade && a.idade >= 60));
+        const bPref = Boolean(b.preferencial || (b.idade && b.idade >= 60));
+        if (aPref !== bPref) {
+          return aPref ? -1 : 1;
+        }
+        return a.numero_senha - b.numero_senha;
+      }),
     [aguardandoTotal, filtrarPorBusca]
   );
 
@@ -295,6 +314,20 @@ export function PainelCambonoPage() {
       if (vozAtiva && escalaSelecionada) {
         falarChamadaVoz(item.numero_senha, item.consulente_nome, escalaSelecionada.nome_entidade);
       }
+
+      // Encaminhar mensagem para o whatsapp automático ao chamar para atendimento
+      const digitosTel = limparDigitos(item.consulente_telefone ?? '');
+      if (digitosTel.length >= 10 && escalaSelecionada) {
+        const mensagem = gerarMensagemWhatsAppChamada({
+          consulenteNome: item.consulente_nome,
+          numeroSenha: item.numero_senha,
+          nomeEntidade: escalaSelecionada.nome_entidade,
+          mediumNome: escalaSelecionada.medium_nome,
+        });
+        const urlWa = `https://api.whatsapp.com/send?phone=55${digitosTel}&text=${encodeURIComponent(mensagem)}`;
+        window.open(urlWa, '_blank', 'noopener,noreferrer');
+      }
+
       await carregarDados();
     } catch (err) {
       setErro(extrairMensagemErro(err));
@@ -332,11 +365,74 @@ export function PainelCambonoPage() {
   function abrirModalManual() {
     setManualNome('');
     setManualTelefone('');
+    setManualIdade('');
+    setManualOutroTerreiro(false);
+    setManualNomeOutroTerreiro('');
+    setManualVerificandoTel(false);
+    setManualFeedbackTel(null);
     setManualPrimeiraVez(false);
     setManualOrientacoes('');
     setManualEscalaId(escalaAtivaId || escalas[0]?.escala_id || '');
     setErroManual(null);
     setModalManualAberto(true);
+  }
+
+  async function handleManualTelefoneChange(novoValor: string) {
+    const formatado = formatarTelefone(novoValor);
+    setManualTelefone(formatado);
+
+    const digitos = limparDigitos(formatado);
+    if (digitos.length < 10) {
+      setManualFeedbackTel(null);
+      return;
+    }
+
+    const val = validarTelefoneBR(formatado);
+    if (!val.valido) {
+      setManualFeedbackTel({
+        tipo: 'erro',
+        mensagem: val.motivo || 'Telefone inválido.',
+      });
+      return;
+    }
+
+    setManualVerificandoTel(true);
+    setManualFeedbackTel(null);
+    try {
+      const info = await verificarTelefoneCadastrado(formatado);
+      if (info.encontrado) {
+        if (info.jaNaGiraAberta) {
+          setManualFeedbackTel({
+            tipo: 'aviso',
+            mensagem: `Atenção: este telefone já possui a senha #${String(info.numeroSenhaGiraAberta).padStart(2, '0')} na gira de hoje!`,
+          });
+        } else {
+          setManualFeedbackTel({
+            tipo: 'sucesso',
+            mensagem: 'Consulente localizado no histórico do terreiro! Dados preenchidos.',
+          });
+        }
+
+        if (info.consulente_nome && (!manualNome.trim() || manualNome.trim().length < 2)) {
+          setManualNome(info.consulente_nome);
+        }
+        if (info.idade !== undefined && info.idade !== null && !manualIdade.trim()) {
+          setManualIdade(String(info.idade));
+        }
+        if (info.outro_terreiro) {
+          setManualOutroTerreiro(true);
+          if (info.nome_outro_terreiro && !manualNomeOutroTerreiro.trim()) {
+            setManualNomeOutroTerreiro(info.nome_outro_terreiro);
+          }
+        }
+      } else {
+        setManualFeedbackTel(null);
+      }
+    } catch {
+      // Ignora erro assíncrono
+    } finally {
+      setManualVerificandoTel(false);
+    }
   }
 
   async function handleSalvarManual(e: React.FormEvent) {
@@ -351,6 +447,22 @@ export function PainelCambonoPage() {
       return;
     }
 
+    if (manualTelefone.trim()) {
+      const valTel = validarTelefoneBR(manualTelefone);
+      if (!valTel.valido) {
+        setErroManual(valTel.motivo || 'Informe um telefone válido com DDD.');
+        return;
+      }
+    }
+
+    if (manualOutroTerreiro && !manualNomeOutroTerreiro.trim()) {
+      setErroManual('Informe o nome da outra casa espiritual ou terreiro.');
+      return;
+    }
+
+    const idadeNum = manualIdade.trim() ? parseInt(manualIdade, 10) : null;
+    const ehIdoso = idadeNum !== null && !Number.isNaN(idadeNum) && idadeNum >= 60;
+
     setSalvandoManual(true);
     try {
       const comp = await gerarSenhaConsulente({
@@ -359,6 +471,12 @@ export function PainelCambonoPage() {
         telefone: manualTelefone || undefined,
         primeiraVez: manualPrimeiraVez,
         origem: 'MANUAL',
+        orientacoes: manualOrientacoes.trim() || undefined,
+        idade: idadeNum,
+        preferencial: ehIdoso,
+        outroTerreiro: manualOutroTerreiro,
+        nomeOutroTerreiro: manualOutroTerreiro ? manualNomeOutroTerreiro.trim() : null,
+      });
         orientacoes: manualOrientacoes.trim() || undefined,
       });
       setModalManualAberto(false);
@@ -991,6 +1109,27 @@ export function PainelCambonoPage() {
                                 <p className="font-bold text-slate-900 text-base">
                                   {item.consulente_nome}
                                 </p>
+                                {item.idade && item.idade >= 60 ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                                    <Award className="w-3 h-3 text-amber-700" />
+                                    Prioridade (Idoso, {item.idade}a)
+                                  </span>
+                                ) : item.preferencial ? (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                                    <Award className="w-3 h-3 text-amber-700" />
+                                    Prioritário
+                                  </span>
+                                ) : item.idade ? (
+                                  <span className="text-xs text-slate-500 font-semibold">
+                                    ({item.idade} anos)
+                                  </span>
+                                ) : null}
+                                {item.outro_terreiro && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-sky-100 text-sky-800 border border-sky-200">
+                                    <Building2 className="w-3 h-3 text-sky-700" />
+                                    {item.nome_outro_terreiro || 'Outro Terreiro'}
+                                  </span>
+                                )}
                                 {item.primeira_vez && (
                                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
                                     1ª Vez <Star className="w-3 h-3 fill-amber-600" />
@@ -1261,13 +1400,97 @@ export function PainelCambonoPage() {
                 <label className="block text-sm font-bold text-slate-800 mb-1">
                   Telefone / WhatsApp (opcional)
                 </label>
+                <div className="relative">
+                  <input
+                    type="tel"
+                    value={manualTelefone}
+                    onChange={(e) => handleManualTelefoneChange(e.target.value)}
+                    placeholder="(65) 99999-9999"
+                    className="w-full min-h-[48px] px-3.5 rounded-xl border-2 border-slate-300 focus:border-terreiro-600 focus:outline-none"
+                  />
+                  {manualVerificandoTel && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 text-xs text-terreiro-700 font-semibold bg-white px-1">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Buscando...</span>
+                    </div>
+                  )}
+                </div>
+                {manualFeedbackTel && (
+                  <p
+                    className={`mt-1 text-xs font-semibold p-2 rounded-lg ${
+                      manualFeedbackTel.tipo === 'sucesso'
+                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        : manualFeedbackTel.tipo === 'aviso'
+                          ? 'bg-amber-50 text-amber-900 border border-amber-300'
+                          : 'bg-red-50 text-red-800 border border-red-200'
+                    }`}
+                  >
+                    {manualFeedbackTel.mensagem}
+                  </p>
+                )}
+              </div>
+
+              {/* Idade */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-bold text-slate-800">
+                    Idade (anos)
+                  </label>
+                  {manualIdade.trim() && parseInt(manualIdade, 10) >= 60 && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-extrabold bg-amber-100 text-amber-900 border border-amber-300">
+                      <Award className="w-3 h-3 text-amber-700" />
+                      Prioridade Idoso (60+)
+                    </span>
+                  )}
+                </div>
                 <input
-                  type="tel"
-                  value={manualTelefone}
-                  onChange={(e) => setManualTelefone(formatarTelefone(e.target.value))}
-                  placeholder="(65) 99999-9999"
-                  className="w-full min-h-[48px] px-3.5 rounded-xl border-2 border-slate-300 focus:border-terreiro-600 focus:outline-none"
+                  type="number"
+                  min="1"
+                  max="120"
+                  value={manualIdade}
+                  onChange={(e) => setManualIdade(e.target.value)}
+                  placeholder="Ex: 68"
+                  className={`w-full min-h-[48px] px-3.5 rounded-xl border-2 ${
+                    manualIdade.trim() && parseInt(manualIdade, 10) >= 60
+                      ? 'border-amber-400 bg-amber-50/30'
+                      : 'border-slate-300'
+                  } focus:border-terreiro-600 focus:outline-none`}
                 />
+              </div>
+
+              {/* Outro terreiro */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2.5 min-h-[44px] px-3 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={manualOutroTerreiro}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setManualOutroTerreiro(checked);
+                      if (!checked) setManualNomeOutroTerreiro('');
+                    }}
+                    className="w-5 h-5 rounded text-terreiro-700"
+                  />
+                  <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-800">
+                    <Building2 className="w-4 h-4 text-terreiro-700" />
+                    <span>É de outro terreiro / casa espiritual?</span>
+                  </div>
+                </label>
+
+                {manualOutroTerreiro && (
+                  <div className="p-3 rounded-xl bg-terreiro-50/70 border border-terreiro-200 space-y-1">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-terreiro-900">
+                      Nome da Casa Espiritual / Terreiro *
+                    </label>
+                    <input
+                      type="text"
+                      value={manualNomeOutroTerreiro}
+                      onChange={(e) => setManualNomeOutroTerreiro(e.target.value)}
+                      placeholder="Ex: Tenda Espírita Caboclo das Matas"
+                      className="w-full min-h-[44px] px-3 rounded-lg border border-terreiro-300 bg-white text-sm focus:border-terreiro-600 focus:outline-none"
+                    />
+                  </div>
+                )}
               </div>
 
               <div>

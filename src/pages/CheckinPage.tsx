@@ -2,12 +2,15 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
+  Award,
+  Building2,
   CalendarX2,
   CheckCircle2,
   Loader2,
   Lock,
   RefreshCw,
   ShieldCheck,
+  Sparkles,
   Ticket,
   UserCheck,
 } from 'lucide-react';
@@ -22,6 +25,7 @@ import {
   formatarDataBR,
   formatarTelefone,
   limparDigitos,
+  validarTelefoneBR,
   LOGO_TERREIRO_URL,
   TERREIRO_NOME,
   TERREIRO_SUBTITULO,
@@ -30,6 +34,7 @@ import {
   gerarSenhaConsulente,
   getDisponibilidadeGiraAberta,
   subscribeFilaGira,
+  verificarTelefoneCadastrado,
 } from '../services/dataService';
 import type { DisponibilidadeGira } from '../types/database';
 
@@ -42,11 +47,23 @@ export function CheckinPage() {
 
   const [nome, setNome] = useState('');
   const [telefone, setTelefone] = useState('');
+  const [idade, setIdade] = useState('');
+  const [outroTerreiro, setOutroTerreiro] = useState(false);
+  const [nomeOutroTerreiro, setNomeOutroTerreiro] = useState('');
   const [primeiraVez, setPrimeiraVez] = useState(false);
   const [escalaSelecionada, setEscalaSelecionada] = useState<string>('');
 
+  const [verificandoTel, setVerificandoTel] = useState(false);
+  const [feedbackTel, setFeedbackTel] = useState<{
+    tipo: 'sucesso' | 'aviso' | 'erro';
+    mensagem: string;
+  } | null>(null);
+
   const [enviando, setEnviando] = useState(false);
   const [erroEnvio, setErroEnvio] = useState<string | null>(null);
+
+  const idadeNumero = idade.trim() ? parseInt(idade, 10) : null;
+  const ehIdoso = idadeNumero !== null && !Number.isNaN(idadeNumero) && idadeNumero >= 60;
 
   const carregarGira = useCallback(async () => {
     try {
@@ -98,6 +115,66 @@ export function CheckinPage() {
 
   const giraInfo = escalas[0];
 
+  async function handleTelefoneChange(novoValor: string) {
+    const formatado = formatarTelefone(novoValor);
+    setTelefone(formatado);
+
+    const digitos = limparDigitos(formatado);
+    if (digitos.length < 10) {
+      setFeedbackTel(null);
+      return;
+    }
+
+    const val = validarTelefoneBR(formatado);
+    if (!val.valido) {
+      setFeedbackTel({
+        tipo: 'erro',
+        mensagem: val.motivo || 'Telefone inválido.',
+      });
+      return;
+    }
+
+    // Telefone válido - verificar se já existe no terreiro
+    setVerificandoTel(true);
+    setFeedbackTel(null);
+    try {
+      const info = await verificarTelefoneCadastrado(formatado);
+      if (info.encontrado) {
+        if (info.jaNaGiraAberta) {
+          setFeedbackTel({
+            tipo: 'aviso',
+            mensagem: `Atenção: este telefone já possui a senha #${String(info.numeroSenhaGiraAberta).padStart(2, '0')} gerada na gira de hoje!`,
+          });
+        } else {
+          setFeedbackTel({
+            tipo: 'sucesso',
+            mensagem: 'Consulente identificado no sistema! Dados preenchidos automaticamente.',
+          });
+        }
+
+        // Auto-preencher dados encontrados se ainda não alterados
+        if (info.consulente_nome && (!nome.trim() || nome.trim().length < 3)) {
+          setNome(info.consulente_nome);
+        }
+        if (info.idade !== undefined && info.idade !== null && !idade.trim()) {
+          setIdade(String(info.idade));
+        }
+        if (info.outro_terreiro) {
+          setOutroTerreiro(true);
+          if (info.nome_outro_terreiro && !nomeOutroTerreiro.trim()) {
+            setNomeOutroTerreiro(info.nome_outro_terreiro);
+          }
+        }
+      } else {
+        setFeedbackTel(null);
+      }
+    } catch {
+      // Ignora erro de rede na checagem assíncrona
+    } finally {
+      setVerificandoTel(false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErroEnvio(null);
@@ -112,9 +189,14 @@ export function CheckinPage() {
       return;
     }
 
-    const digitosTel = limparDigitos(telefone);
-    if (digitosTel.length < 10) {
-      setErroEnvio('Informe um WhatsApp / Telefone válido com DDD.');
+    const valTel = validarTelefoneBR(telefone);
+    if (!valTel.valido) {
+      setErroEnvio(valTel.motivo || 'Informe um WhatsApp / Telefone válido com DDD.');
+      return;
+    }
+
+    if (outroTerreiro && !nomeOutroTerreiro.trim()) {
+      setErroEnvio('Por favor, informe o nome da outra casa espiritual ou terreiro.');
       return;
     }
 
@@ -131,6 +213,10 @@ export function CheckinPage() {
         telefone,
         primeiraVez,
         origem: 'QRCODE',
+        idade: idadeNumero,
+        preferencial: ehIdoso,
+        outroTerreiro,
+        nomeOutroTerreiro: outroTerreiro ? nomeOutroTerreiro.trim() : null,
       });
 
       salvarComprovanteLocal(comprovante);
@@ -295,17 +381,121 @@ export function CheckinPage() {
                   >
                     WhatsApp / Telefone <span className="text-red-600">*</span>
                   </label>
+                  <div className="relative">
+                    <input
+                      id="telefone-consulente"
+                      type="tel"
+                      inputMode="tel"
+                      required
+                      autoComplete="tel"
+                      value={telefone}
+                      onChange={(e) => handleTelefoneChange(e.target.value)}
+                      placeholder="(65) 99999-9999"
+                      className="w-full min-h-[48px] px-4 rounded-xl border-2 border-slate-300 bg-white text-base text-slate-900 placeholder:text-slate-400 focus:border-terreiro-600 focus:outline-none transition"
+                    />
+                    {verificandoTel && (
+                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs text-terreiro-700 font-semibold bg-white px-1">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Verificando...</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {feedbackTel && (
+                    <div
+                      className={`mt-2 p-2.5 rounded-xl text-xs font-semibold flex items-start gap-2 ${
+                        feedbackTel.tipo === 'sucesso'
+                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                          : feedbackTel.tipo === 'aviso'
+                            ? 'bg-amber-50 text-amber-900 border border-amber-300'
+                            : 'bg-red-50 text-red-800 border border-red-200'
+                      }`}
+                    >
+                      {feedbackTel.tipo === 'sucesso' ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      )}
+                      <span>{feedbackTel.mensagem}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Idade e Prioridade Idoso */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label
+                      htmlFor="idade-consulente"
+                      className="block text-sm font-bold text-slate-800"
+                    >
+                      Idade (anos)
+                    </label>
+                    {ehIdoso && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-100 text-amber-900 border border-amber-300 animate-pulse">
+                        <Award className="w-3.5 h-3.5 text-amber-700" />
+                        <span>Prioridade Idoso (60+)</span>
+                      </span>
+                    )}
+                  </div>
                   <input
-                    id="telefone-consulente"
-                    type="tel"
-                    inputMode="tel"
-                    required
-                    autoComplete="tel"
-                    value={telefone}
-                    onChange={(e) => setTelefone(formatarTelefone(e.target.value))}
-                    placeholder="(65) 99999-9999"
-                    className="w-full min-h-[48px] px-4 rounded-xl border-2 border-slate-300 bg-white text-base text-slate-900 placeholder:text-slate-400 focus:border-terreiro-600 focus:outline-none transition"
+                    id="idade-consulente"
+                    type="number"
+                    min="1"
+                    max="120"
+                    inputMode="numeric"
+                    value={idade}
+                    onChange={(e) => setIdade(e.target.value)}
+                    placeholder="Ex: 65"
+                    className={`w-full min-h-[48px] px-4 rounded-xl border-2 bg-white text-base text-slate-900 placeholder:text-slate-400 focus:outline-none transition ${
+                      ehIdoso
+                        ? 'border-amber-400 focus:border-amber-600 bg-amber-50/30'
+                        : 'border-slate-300 focus:border-terreiro-600'
+                    }`}
                   />
+                  <p className="text-[11px] text-slate-500">
+                    Consulentes com 60 anos ou mais têm prioridade automática no atendimento.
+                  </p>
+                </div>
+
+                {/* Checkbox Outro Terreiro */}
+                <div className="space-y-2">
+                  <label className="flex items-center gap-3 min-h-[48px] px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
+                    <input
+                      type="checkbox"
+                      checked={outroTerreiro}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setOutroTerreiro(checked);
+                        if (!checked) setNomeOutroTerreiro('');
+                      }}
+                      className="w-5 h-5 rounded border-slate-400 text-terreiro-700 focus:ring-terreiro-600"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-terreiro-700" />
+                      <span className="text-sm font-semibold text-slate-800">
+                        É de outro terreiro / casa espiritual?
+                      </span>
+                    </div>
+                  </label>
+
+                  {outroTerreiro && (
+                    <div className="p-3.5 rounded-2xl bg-terreiro-50/70 border-2 border-terreiro-200 space-y-1.5 transition-all">
+                      <label
+                        htmlFor="nome-outro-terreiro"
+                        className="block text-xs font-bold uppercase tracking-wider text-terreiro-900"
+                      >
+                        Nome da Casa Espiritual / Terreiro <span className="text-red-600">*</span>
+                      </label>
+                      <input
+                        id="nome-outro-terreiro"
+                        type="text"
+                        value={nomeOutroTerreiro}
+                        onChange={(e) => setNomeOutroTerreiro(e.target.value)}
+                        placeholder="Ex: Tenda Espírita Caboclo das Matas"
+                        className="w-full min-h-[44px] px-3.5 rounded-xl border border-terreiro-300 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:border-terreiro-600 focus:outline-none"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <label className="flex items-center gap-3 min-h-[48px] px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100 transition">
