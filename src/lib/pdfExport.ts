@@ -79,8 +79,8 @@ function abrirDocumentoParaPDF(titulo: string, corpoHtml: string): void {
         gap: 8px;
         align-items: center;
         justify-content: space-between;
-        background: #f0fdf4;
-        border: 1px solid #bbf7d0;
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
         border-radius: 12px;
         padding: 12px 16px;
         margin-bottom: 18px;
@@ -88,7 +88,7 @@ function abrirDocumentoParaPDF(titulo: string, corpoHtml: string): void {
       .no-print p {
         margin: 0;
         font-size: 12px;
-        color: #166534;
+        color: #0369a1;
         font-weight: 600;
       }
       .no-print .actions {
@@ -96,7 +96,7 @@ function abrirDocumentoParaPDF(titulo: string, corpoHtml: string): void {
         gap: 8px;
       }
       .btn-print {
-        background: #0f5132;
+        background: #0284c7;
         color: #ffffff;
         border: none;
         border-radius: 8px;
@@ -119,7 +119,7 @@ function abrirDocumentoParaPDF(titulo: string, corpoHtml: string): void {
         display: flex;
         align-items: center;
         gap: 14px;
-        border-bottom: 2px solid #0f5132;
+        border-bottom: 2px solid #0284c7;
         padding-bottom: 12px;
         margin-bottom: 14px;
       }
@@ -132,7 +132,7 @@ function abrirDocumentoParaPDF(titulo: string, corpoHtml: string): void {
       .doc-header h1 {
         margin: 0;
         font-size: 16px;
-        color: #0f5132;
+        color: #0284c7;
       }
       .doc-header p {
         margin: 2px 0 0;
@@ -198,8 +198,8 @@ function abrirDocumentoParaPDF(titulo: string, corpoHtml: string): void {
         background: #ffffff;
       }
       .box-orientacoes {
-        border: 1px solid #86efac;
-        background: #f0fdf4;
+        border: 1px solid #7dd3fc;
+        background: #f0f9ff;
         border-radius: 12px;
         padding: 12px 14px;
         margin-bottom: 12px;
@@ -209,7 +209,7 @@ function abrirDocumentoParaPDF(titulo: string, corpoHtml: string): void {
         font-size: 11px;
         font-weight: 800;
         text-transform: uppercase;
-        color: #0f5132;
+        color: #0284c7;
         margin: 0 0 6px;
       }
       .footer-note {

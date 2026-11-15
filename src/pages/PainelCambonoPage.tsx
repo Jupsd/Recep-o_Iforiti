@@ -565,7 +565,7 @@ export function PainelCambonoPage() {
               title={vozAtiva ? 'Desativar chamada por voz' : 'Ativar chamada por voz'}
               className={`min-h-[42px] px-3 rounded-xl border text-xs font-bold inline-flex items-center gap-1.5 transition ${
                 vozAtiva
-                  ? 'bg-emerald-600 border-emerald-400 text-white'
+                  ? 'bg-sky-600 border-sky-400 text-white'
                   : 'bg-white/10 border-white/20 text-terreiro-100 hover:bg-white/20'
               }`}
             >
@@ -648,7 +648,7 @@ export function PainelCambonoPage() {
         )}
 
         {feedbackManual && (
-          <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-2xl p-4 flex items-center justify-between gap-3 text-sm font-bold shadow-sm">
+          <div className="bg-sky-50 border border-sky-300 text-sky-900 rounded-2xl p-4 flex items-center justify-between gap-3 text-sm font-bold shadow-sm">
             <span>{feedbackManual}</span>
             <button type="button" onClick={() => setFeedbackManual(null)}>
               <X className="w-4 h-4" />
@@ -657,7 +657,7 @@ export function PainelCambonoPage() {
         )}
 
         {feedbackOrientacao && (
-          <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 rounded-2xl p-4 flex items-center justify-between gap-3 text-sm font-bold shadow-sm">
+          <div className="bg-sky-50 border border-sky-300 text-sky-900 rounded-2xl p-4 flex items-center justify-between gap-3 text-sm font-bold shadow-sm">
             <span>{feedbackOrientacao}</span>
             <button type="button" onClick={() => setFeedbackOrientacao(null)}>
               <X className="w-4 h-4" />
@@ -828,7 +828,7 @@ export function PainelCambonoPage() {
                         key={item.id}
                         className={`bg-white rounded-2xl border-2 p-4 sm:p-5 shadow-sm space-y-3 ${
                           item.status === 'EM_ATENDIMENTO'
-                            ? 'border-emerald-400 bg-emerald-50/40'
+                            ? 'border-sky-400 bg-sky-50/40'
                             : 'border-slate-200'
                         }`}
                       >
@@ -837,7 +837,7 @@ export function PainelCambonoPage() {
                             <span
                               className={`px-3 py-1 rounded-xl font-black text-base ${
                                 item.status === 'EM_ATENDIMENTO'
-                                  ? 'bg-emerald-700 text-white'
+                                  ? 'bg-sky-600 text-white'
                                   : 'bg-terreiro-100 text-terreiro-900'
                               }`}
                             >
@@ -851,7 +851,7 @@ export function PainelCambonoPage() {
                                 <span
                                   className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
                                     item.status === 'EM_ATENDIMENTO'
-                                      ? 'bg-emerald-100 text-emerald-900'
+                                      ? 'bg-sky-100 text-sky-900'
                                       : item.status === 'AGUARDANDO'
                                         ? 'bg-sky-100 text-sky-800'
                                         : item.status === 'ATENDIDO'
@@ -903,7 +903,7 @@ export function PainelCambonoPage() {
                                 )}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold hover:bg-emerald-100"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold hover:bg-sky-100"
                                 title="Enviar mensagem no WhatsApp"
                               >
                                 <MessageCircle className="w-3.5 h-3.5" />
@@ -968,7 +968,7 @@ export function PainelCambonoPage() {
               <>
             {/* Bloco A: Em Atendimento Agora */}
             <section className="space-y-2.5">
-              <h2 className="text-xs font-extrabold uppercase tracking-wider text-emerald-800 px-1">
+              <h2 className="text-xs font-extrabold uppercase tracking-wider text-sky-800 px-1">
                 Em Atendimento Agora ({emAtendimento.length})
               </h2>
 
@@ -984,18 +984,18 @@ export function PainelCambonoPage() {
                   return (
                   <div
                     key={item.id}
-                    className="bg-emerald-50 border-2 border-emerald-400 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3"
+                    className="bg-sky-50 border-2 border-sky-300 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2.5">
-                        <span className="px-3 py-1 rounded-xl bg-emerald-700 text-white font-black text-lg">
+                        <span className="px-3 py-1 rounded-xl bg-sky-600 text-white font-black text-lg">
                           {formatarSenha(item.numero_senha)}
                         </span>
                         <div>
                           <p className="font-extrabold text-slate-900 text-lg leading-tight">
                             {item.consulente_nome}
                           </p>
-                          <p className="text-xs font-semibold text-emerald-800 flex items-center gap-1 mt-0.5">
+                          <p className="text-xs font-semibold text-sky-800 flex items-center gap-1 mt-0.5">
                             <Clock className="w-3.5 h-3.5" />
                             Início: {formatarHoraBR(item.chamado_em)}
                             {item.primeira_vez && (
@@ -1010,15 +1010,15 @@ export function PainelCambonoPage() {
                       <button
                         type="button"
                         onClick={() => setAtendimentoFicha(item)}
-                        className="min-h-[40px] px-3.5 rounded-xl bg-white hover:bg-emerald-100 border border-emerald-300 text-emerald-900 font-bold text-xs inline-flex items-center gap-1.5 shadow-sm transition"
+                        className="min-h-[40px] px-3.5 rounded-xl bg-white hover:bg-sky-100 border border-sky-300 text-sky-900 font-bold text-xs inline-flex items-center gap-1.5 shadow-sm transition"
                       >
                         <FileText className="w-4 h-4" />
                         <span>Ficha Completa / Histórico / PDF</span>
                       </button>
                     </div>
 
-                    <div className="bg-white border border-emerald-200 rounded-2xl p-3.5 space-y-2.5">
-                      <label className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase text-emerald-900">
+                    <div className="bg-white border border-sky-200 rounded-2xl p-3.5 space-y-2.5">
+                      <label className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase text-sky-900">
                         <FileText className="w-4 h-4" />
                         <span>Dados da Consulta com a Entidade / Orientações</span>
                       </label>
@@ -1029,7 +1029,7 @@ export function PainelCambonoPage() {
                             key={m.rotulo}
                             type="button"
                             onClick={() => inserirModeloRapido(item, m.texto)}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 text-xs font-bold transition"
+                            className="px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-900 text-xs font-bold transition"
                           >
                             {m.rotulo}
                           </button>
@@ -1041,7 +1041,7 @@ export function PainelCambonoPage() {
                         value={obterTextoOrientacao(item)}
                         onChange={(e) => atualizarTextoOrientacao(item.id, e.target.value)}
                         placeholder="Escreva aqui o que a entidade orientou na consulta (banhos de ervas, velas, firmezas, retornos, observações)..."
-                        className="w-full p-3 rounded-xl border-2 border-emerald-200 bg-slate-50 focus:bg-white text-sm text-slate-900 focus:border-emerald-600 focus:outline-none resize-y"
+                        className="w-full p-3 rounded-xl border-2 border-sky-200 bg-slate-50 focus:bg-white text-sm text-slate-900 focus:border-sky-500 focus:outline-none resize-y"
                       />
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1049,7 +1049,7 @@ export function PainelCambonoPage() {
                           type="button"
                           disabled={salvandoEste || acaoEmAndamentoId === item.id}
                           onClick={() => handleSalvarOrientacaoInline(item, false)}
-                          className="min-h-[46px] rounded-xl border-2 border-emerald-600 bg-white hover:bg-emerald-50 disabled:opacity-50 text-emerald-800 font-extrabold text-sm inline-flex items-center justify-center gap-1.5 transition"
+                          className="min-h-[46px] rounded-xl border-2 border-sky-500 bg-white hover:bg-sky-50 disabled:opacity-50 text-sky-800 font-extrabold text-sm inline-flex items-center justify-center gap-1.5 transition"
                         >
                           {salvandoEste ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -1063,7 +1063,7 @@ export function PainelCambonoPage() {
                           type="button"
                           disabled={salvandoEste || acaoEmAndamentoId === item.id}
                           onClick={() => handleSalvarOrientacaoInline(item, true)}
-                          className="min-h-[46px] rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white font-extrabold text-sm inline-flex items-center justify-center gap-1.5 shadow transition"
+                          className="min-h-[46px] rounded-xl bg-sky-500 hover:bg-sky-600 disabled:bg-sky-300 text-white font-extrabold text-sm inline-flex items-center justify-center gap-1.5 shadow transition"
                         >
                           {salvandoEste || acaoEmAndamentoId === item.id ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -1168,7 +1168,7 @@ export function PainelCambonoPage() {
                                 )}`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold hover:bg-emerald-100"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-sky-50 text-sky-700 border border-sky-200 text-xs font-bold hover:bg-sky-100"
                                 title="Chamar consulente no WhatsApp"
                               >
                                 <MessageCircle className="w-3.5 h-3.5" />
@@ -1421,7 +1421,7 @@ export function PainelCambonoPage() {
                   <p
                     className={`mt-1 text-xs font-semibold p-2 rounded-lg ${
                       manualFeedbackTel.tipo === 'sucesso'
-                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                        ? 'bg-sky-50 text-sky-800 border border-sky-200'
                         : manualFeedbackTel.tipo === 'aviso'
                           ? 'bg-amber-50 text-amber-900 border border-amber-300'
                           : 'bg-red-50 text-red-800 border border-red-200'
@@ -1621,7 +1621,7 @@ export function PainelCambonoPage() {
                 className={`w-full min-h-[44px] rounded-xl font-bold text-sm border ${
                   escalaSelecionada.escala_ativa
                     ? 'bg-amber-50 border-amber-300 text-amber-900'
-                    : 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                    : 'bg-sky-50 border-sky-300 text-sky-900'
                 }`}
               >
                 {escalaSelecionada.escala_ativa

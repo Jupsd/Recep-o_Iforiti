@@ -487,7 +487,7 @@ export function FichaConsulenteModal({
                 href={`https://wa.me/55${digitosTel}?text=${encodeURIComponent(mensagemWhatsApp)}`}
                 target="_blank"
                 rel="noreferrer"
-                className="min-h-[44px] px-3.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition"
+                className="min-h-[44px] px-3.5 rounded-xl bg-sky-50 hover:bg-sky-100 border border-sky-300 text-sky-800 font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition"
               >
                 <MessageCircle className="w-4 h-4" />
                 <span>WhatsApp</span>

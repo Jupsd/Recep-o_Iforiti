@@ -404,14 +404,14 @@ export function CheckinPage() {
                     <div
                       className={`mt-2 p-2.5 rounded-xl text-xs font-semibold flex items-start gap-2 ${
                         feedbackTel.tipo === 'sucesso'
-                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                          ? 'bg-sky-50 text-sky-800 border border-sky-200'
                           : feedbackTel.tipo === 'aviso'
                             ? 'bg-amber-50 text-amber-900 border border-amber-300'
                             : 'bg-red-50 text-red-800 border border-red-200'
                       }`}
                     >
                       {feedbackTel.tipo === 'sucesso' ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <CheckCircle2 className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
                       ) : (
                         <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                       )}

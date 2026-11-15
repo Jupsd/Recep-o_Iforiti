@@ -40,8 +40,8 @@ function getBadgeEstilo(status: StatusAtendimento): {
   switch (status) {
     case 'EM_ATENDIMENTO':
       return {
-        bg: 'bg-emerald-100 text-emerald-900 border-emerald-400 animate-pulse',
-        dot: 'bg-emerald-600',
+        bg: 'bg-sky-100 text-sky-900 border-sky-400 animate-pulse',
+        dot: 'bg-sky-600',
         texto: 'Em Atendimento Agora!',
       };
     case 'ATENDIDO':
@@ -244,7 +244,7 @@ export function SenhaPage() {
 
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="inline-flex items-center gap-2 text-terreiro-100 font-bold text-sm">
-            <CheckCircle2 className="w-5 h-5 text-emerald-300" />
+            <CheckCircle2 className="w-5 h-5 text-sky-300" />
             <span>
               {jaExistia ? 'Comprovante Recuperado' : 'Senha Gerada com Sucesso!'}
             </span>
@@ -253,7 +253,7 @@ export function SenhaPage() {
           <span
             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${
               online
-                ? 'bg-emerald-900/50 border-emerald-400/40 text-emerald-100'
+                ? 'bg-sky-900/50 border-sky-400/40 text-sky-100'
                 : 'bg-amber-900/60 border-amber-400/50 text-amber-100'
             }`}
           >
@@ -288,11 +288,11 @@ export function SenhaPage() {
 
       <main className="max-w-lg mx-auto px-4 space-y-4">
         {comprovante.status === 'EM_ATENDIMENTO' && (
-          <div className="bg-emerald-600 text-white rounded-2xl p-4 shadow-lg flex items-center gap-3 animate-bounce">
+          <div className="bg-sky-600 text-white rounded-2xl p-4 shadow-lg flex items-center gap-3 animate-bounce">
             <BellRing className="w-7 h-7 shrink-0" />
             <div>
               <p className="font-extrabold text-base">CHEGOU A SUA VEZ!</p>
-              <p className="text-sm text-emerald-50">
+              <p className="text-sm text-sky-50">
                 Dirija-se ao atendimento com {comprovante.nome_entidade}.
               </p>
             </div>
