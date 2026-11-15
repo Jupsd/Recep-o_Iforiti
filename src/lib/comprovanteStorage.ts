@@ -63,6 +63,37 @@ export function atualizarStatusComprovanteLocal(
   }
 }
 
+export function atualizarEntidadeComprovanteLocal(
+  atendimentoId: string,
+  dados: {
+    escala_id: string;
+    numero_senha: number;
+    nome_entidade: string;
+    medium_nome?: string;
+    linha?: string | null;
+  }
+): void {
+  try {
+    const atuais = listarComprovantesLocais();
+    const atualizados = atuais.map((item) =>
+      item.atendimento_id === atendimentoId
+        ? {
+            ...item,
+            escala_id: dados.escala_id,
+            numero_senha: dados.numero_senha,
+            nome_entidade: dados.nome_entidade,
+            medium_nome: dados.medium_nome ?? item.medium_nome,
+            linha: dados.linha !== undefined ? dados.linha : item.linha,
+            status: 'AGUARDANDO' as StatusAtendimento,
+          }
+        : item
+    );
+    localStorage.setItem(STORAGE_LIST_KEY, JSON.stringify(atualizados));
+  } catch {
+    // Ignore
+  }
+}
+
 export function limparComprovantesLocais(): void {
   try {
     localStorage.removeItem(STORAGE_LIST_KEY);

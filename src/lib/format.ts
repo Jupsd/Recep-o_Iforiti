@@ -127,7 +127,7 @@ export { tocarSinoChamada as notificarChamadaNoDispositivo } from './sound';
 export function gerarMensagemWhatsAppChamada(params: {
   consulenteNome: string;
   numeroSenha: number;
-  nomeEntidade: string;
+  nomeEntidade?: string | null;
   mediumNome?: string | null;
 }): string {
   const nomeLimpo = params.consulenteNome.replace(/\s*\|\|\s*.*$/, '').trim();
@@ -135,13 +135,14 @@ export function gerarMensagemWhatsAppChamada(params: {
     `*${TERREIRO_NOME}*`,
     `Olá, *${nomeLimpo}*! Axé! 🌿`,
     '',
-    `🔔 Sua senha *${formatarSenha(params.numeroSenha)}* está sendo chamada agora para atendimento com *${params.nomeEntidade}*${
-      params.mediumNome ? ` (Médium: ${params.mediumNome})` : ''
-    }.`,
+    `🔔 Sua senha *${formatarSenha(params.numeroSenha)}* está sendo chamada agora!`,
+    params.nomeEntidade
+      ? `✨ Atendimento: *${params.nomeEntidade}*${params.mediumNome ? ` (Médium: ${params.mediumNome})` : ''}`
+      : '',
     '',
-    'Por favor, dirija-se à sala de atendimento.',
+    '👉 *Por favor, dirija-se até a RECEPÇÃO do terreiro.*',
   ];
-  return partes.join('\n');
+  return partes.filter(Boolean).join('\n');
 }
 
 export function gerarMensagemWhatsAppOrientacoes(params: {

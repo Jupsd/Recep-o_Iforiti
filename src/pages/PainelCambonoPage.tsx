@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
+  ArrowLeftRight,
   Award,
   BarChart3,
   Building2,
@@ -57,6 +58,7 @@ import {
   restaurarParaFila,
   salvarFichaConsulente,
   subscribeFilaGira,
+  transferirAtendimentoParaEntidade,
   verificarTelefoneCadastrado,
 } from '../services/dataService';
 import type { Atendimento, DisponibilidadeGira } from '../types/database';
@@ -129,6 +131,12 @@ export function PainelCambonoPage() {
   // Modal Limite Rápido
   const [modalLimiteAberto, setModalLimiteAberto] = useState(false);
   const [novoLimiteInput, setNovoLimiteInput] = useState<number>(0);
+
+  // Modal Trocar Entidade (Fim da fila)
+  const [atendimentoTroca, setAtendimentoTroca] = useState<Atendimento | null>(null);
+  const [novaEscalaTrocaId, setNovaEscalaTrocaId] = useState<string>('');
+  const [transferindoTroca, setTransferindoTroca] = useState(false);
+  const [feedbackTroca, setFeedbackTroca] = useState<string | null>(null);
 
   const carregarDados = useCallback(async () => {
     try {
@@ -363,6 +371,30 @@ export function PainelCambonoPage() {
       setErro(extrairMensagemErro(err));
     } finally {
       setAcaoEmAndamentoId(null);
+    }
+  }
+
+  function abrirModalTrocar(item: Atendimento) {
+    const outrasEscalas = escalas.filter((e) => e.escala_id !== item.escala_id && e.escala_ativa);
+    setNovaEscalaTrocaId(outrasEscalas[0]?.escala_id ?? '');
+    setAtendimentoTroca(item);
+  }
+
+  async function handleConfirmarTrocaEntidade() {
+    if (!atendimentoTroca || !novaEscalaTrocaId) return;
+    setTransferindoTroca(true);
+    try {
+      const res = await transferirAtendimentoParaEntidade(atendimentoTroca.id, novaEscalaTrocaId);
+      setAtendimentoTroca(null);
+      setFeedbackTroca(
+        `Consulente ${atendimentoTroca.consulente_nome} transferido(a) para o final da fila de ${res.nomeEntidade} com a senha #${String(res.novoNumeroSenha).padStart(2, '0')}!`
+      );
+      setTimeout(() => setFeedbackTroca(null), 7000);
+      await carregarDados();
+    } catch (err) {
+      setErro(extrairMensagemErro(err, 'Não foi possível trocar a entidade do consulente.'));
+    } finally {
+      setTransferindoTroca(false);
     }
   }
 
@@ -665,6 +697,18 @@ export function PainelCambonoPage() {
           </div>
         )}
 
+        {feedbackTroca && (
+          <div className="bg-amber-50 border-2 border-amber-400 text-amber-950 rounded-2xl p-4 flex items-center justify-between gap-3 text-sm font-bold shadow-sm animate-pulse">
+            <div className="flex items-center gap-2">
+              <Check className="w-5 h-5 text-amber-700 shrink-0" />
+              <span>{feedbackTroca}</span>
+            </div>
+            <button type="button" onClick={() => setFeedbackTroca(null)}>
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
         {escalas.length === 0 ? (
           <div className="bg-white rounded-3xl border border-slate-200 p-8 text-center shadow-sm">
             <img
@@ -918,6 +962,17 @@ export function PainelCambonoPage() {
                               <FileText className="w-3.5 h-3.5" />
                               <span>Ficha Completa / Histórico / PDF</span>
                             </button>
+                            {item.status !== 'ATENDIDO' && (
+                              <button
+                                type="button"
+                                onClick={() => abrirModalTrocar(item)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-900 border border-amber-300 text-xs font-bold hover:bg-amber-100 transition"
+                                title="Trocar entidade do consulente (colocar no fim da fila)"
+                              >
+                                <ArrowLeftRight className="w-3.5 h-3.5 text-amber-700" />
+                                <span>Trocar Entidade</span>
+                              </button>
+                            )}
                           </div>
                         </div>
 
@@ -1154,6 +1209,16 @@ export function PainelCambonoPage() {
                             >
                               <FileText className="w-3.5 h-3.5" />
                               <span>Ficha / Orientações</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => abrirModalTrocar(item)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-900 border border-amber-300 text-xs font-bold hover:bg-amber-100 transition"
+                              title="Trocar entidade do consulente (colocar no fim da fila)"
+                            >
+                              <ArrowLeftRight className="w-3.5 h-3.5 text-amber-700" />
+                              <span>Trocar Entidade</span>
                             </button>
 
                             {digitosTel.length >= 10 && (
@@ -1661,6 +1726,145 @@ export function PainelCambonoPage() {
           onClose={() => setAtendimentoFicha(null)}
           onSalvo={carregarDados}
         />
+      )}
+
+      {/* Modal Trocar Entidade (Fim da Fila) */}
+      {atendimentoTroca && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center shrink-0">
+                  <ArrowLeftRight className="w-5 h-5 text-amber-700" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-extrabold text-slate-900 leading-tight">
+                    Trocar Entidade
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Inclusão no final da fila da nova entidade
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAtendimentoTroca(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Dados do consulente atual */}
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase text-slate-500">Consulente</span>
+                <span className="px-2 py-0.5 rounded-md bg-terreiro-100 text-terreiro-900 font-black text-xs">
+                  Senha Atual: #{formatarSenha(atendimentoTroca.numero_senha)}
+                </span>
+              </div>
+              <p className="font-extrabold text-slate-900 text-base">
+                {atendimentoTroca.consulente_nome}
+              </p>
+              <p className="text-xs text-slate-600">
+                Entidade atual:{' '}
+                <strong>
+                  {escalas.find((e) => e.escala_id === atendimentoTroca.escala_id)?.nome_entidade ||
+                    'Entidade Atual'}
+                </strong>
+              </p>
+            </div>
+
+            {/* Alerta de regra da casa */}
+            <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-950 text-xs space-y-1.5">
+              <div className="flex items-center gap-1.5 font-bold text-amber-900">
+                <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" />
+                <span>Regra da Casa: Final da Fila</span>
+              </div>
+              <p className="leading-relaxed">
+                Conforme as regras do terreiro, a pedido do consulente para atendimento com outra entidade específica, a ficha será movida automaticamente para o <strong>FINAL DA FILA</strong> da nova entidade escolhida, recebendo um novo número de senha.
+              </p>
+            </div>
+
+            {/* Seleção da nova entidade */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+                Selecione a Nova Entidade Desejada:
+              </label>
+
+              {escalas.filter((e) => e.escala_id !== atendimentoTroca.escala_id && e.escala_ativa)
+                .length === 0 ? (
+                <div className="p-4 rounded-xl bg-slate-100 text-center text-sm text-slate-600">
+                  Não há outras entidades ativas nesta gira para troca.
+                </div>
+              ) : (
+                escalas
+                  .filter((e) => e.escala_id !== atendimentoTroca.escala_id && e.escala_ativa)
+                  .map((esc) => {
+                    const atdsDaEscala = atendimentos.filter((a) => a.escala_id === esc.escala_id);
+                    const maxNum = atdsDaEscala.reduce((max, a) => Math.max(max, a.numero_senha), 0);
+                    const proximaSenha = maxNum + 1;
+                    const naFila = atdsDaEscala.filter((a) => a.status === 'AGUARDANDO').length;
+                    const selecionada = novaEscalaTrocaId === esc.escala_id;
+
+                    return (
+                      <button
+                        key={esc.escala_id}
+                        type="button"
+                        onClick={() => setNovaEscalaTrocaId(esc.escala_id)}
+                        className={`w-full text-left rounded-2xl border-2 p-3.5 transition flex items-center justify-between gap-3 ${
+                          selecionada
+                            ? 'border-terreiro-700 bg-terreiro-50/70 ring-2 ring-terreiro-200'
+                            : 'border-slate-200 bg-white hover:border-terreiro-400'
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <p className="font-extrabold text-slate-900 text-sm">
+                            {esc.nome_entidade}
+                          </p>
+                          <p className="text-xs text-slate-600 mt-0.5">
+                            Médium: <span className="font-medium">{esc.medium_nome}</span>
+                            {esc.linha ? ` • ${esc.linha}` : ''}
+                          </p>
+                          <p className="text-[11px] text-terreiro-800 font-semibold mt-1">
+                            {naFila} {naFila === 1 ? 'pessoa' : 'pessoas'} aguardando na fila
+                          </p>
+                        </div>
+
+                        <div className="shrink-0 text-right">
+                          <span className="block text-[10px] uppercase font-bold text-slate-400">
+                            Nova Senha
+                          </span>
+                          <span className="inline-block px-2.5 py-1 rounded-xl bg-terreiro-700 text-white font-black text-sm">
+                            #{formatarSenha(proximaSenha)}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })
+              )}
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setAtendimentoTroca(null)}
+                className="flex-1 min-h-[48px] rounded-xl border border-slate-300 font-bold text-slate-700 hover:bg-slate-50 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={transferindoTroca || !novaEscalaTrocaId}
+                onClick={handleConfirmarTrocaEntidade}
+                className="flex-1 min-h-[48px] rounded-xl bg-terreiro-700 hover:bg-terreiro-800 disabled:bg-slate-300 text-white font-bold inline-flex items-center justify-center gap-2 shadow transition"
+              >
+                {transferindoTroca && <Loader2 className="w-4 h-4 animate-spin" />}
+                <span>Confirmar Troca (Fim da Fila)</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

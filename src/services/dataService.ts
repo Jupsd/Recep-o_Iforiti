@@ -1,5 +1,8 @@
 import { isSupabaseConfigured, supabase } from '../lib/supabase';
-import { obterComprovanteAtivoLocal } from '../lib/comprovanteStorage';
+import {
+  atualizarEntidadeComprovanteLocal,
+  obterComprovanteAtivoLocal,
+} from '../lib/comprovanteStorage';
 import { limparDigitos } from '../lib/format';
 import type {
   Atendimento,
@@ -758,6 +761,8 @@ export async function getAtendimentoStatusEPosicao(
   giraEncerrada: boolean;
   status: StatusAtendimento;
   pessoasNaFrente: number;
+  escalaId?: string;
+  numeroSenha?: number;
 }> {
   if (isSupabaseConfigured && supabase) {
     if (giraId) {
@@ -824,6 +829,8 @@ export async function getAtendimentoStatusEPosicao(
       giraEncerrada: false,
       status: atual.status as StatusAtendimento,
       pessoasNaFrente,
+      escalaId: atual.escala_id,
+      numeroSenha: atual.numero_senha,
     };
   }
 
@@ -852,6 +859,8 @@ export async function getAtendimentoStatusEPosicao(
     giraEncerrada: false,
     status: atual.status,
     pessoasNaFrente,
+    escalaId: atual.escala_id,
+    numeroSenha: atual.numero_senha,
   };
 }
 
@@ -1167,6 +1176,108 @@ export async function restaurarParaFila(atendimentoId: string): Promise<void> {
     };
     salvarLocalDb(db);
   }
+}
+
+export async function transferirAtendimentoParaEntidade(
+  atendimentoId: string,
+  novaEscalaId: string
+): Promise<{ novoNumeroSenha: number; nomeEntidade: string }> {
+  if (isSupabaseConfigured && supabase) {
+    const { data: novaEscala, error: escErr } = await supabase
+      .from('vw_disponibilidade_gira')
+      .select('*')
+      .eq('escala_id', novaEscalaId)
+      .maybeSingle();
+
+    if (escErr) throw escErr;
+    const nomeEntidade = (novaEscala as DisponibilidadeGira | null)?.nome_entidade ?? 'Entidade';
+    const mediumNome = (novaEscala as DisponibilidadeGira | null)?.medium_nome ?? 'Médium';
+    const linha = (novaEscala as DisponibilidadeGira | null)?.linha ?? null;
+
+    const { data: atendimentosNova, error: atdErr } = await supabase
+      .from('atendimentos')
+      .select('numero_senha')
+      .eq('escala_id', novaEscalaId);
+
+    if (atdErr) throw atdErr;
+
+    const maxNumero = ((atendimentosNova ?? []) as Array<{ numero_senha: number }>).reduce(
+      (max, a) => Math.max(max, a.numero_senha || 0),
+      0
+    );
+    const novoNumero = maxNumero + 1;
+
+    const { error: updErr } = await supabase
+      .from('atendimentos')
+      .update({
+        escala_id: novaEscalaId,
+        numero_senha: novoNumero,
+        status: 'AGUARDANDO',
+        chamado_em: null,
+        hora_atendimento: null,
+      })
+      .eq('id', atendimentoId);
+
+    if (updErr) throw updErr;
+
+    atualizarEntidadeComprovanteLocal(atendimentoId, {
+      escala_id: novaEscalaId,
+      numero_senha: novoNumero,
+      nome_entidade: nomeEntidade,
+      medium_nome: mediumNome,
+      linha,
+    });
+
+    return {
+      novoNumeroSenha: novoNumero,
+      nomeEntidade,
+    };
+  }
+
+  const db = lerLocalDb();
+  const atdIdx = db.atendimentos.findIndex((a) => a.id === atendimentoId);
+  if (atdIdx === -1) {
+    throw new Error('Atendimento não encontrado.');
+  }
+
+  const novaEscala = db.gira_escalas.find((e) => e.id === novaEscalaId);
+  if (!novaEscala) {
+    throw new Error('Escala da nova entidade não encontrada.');
+  }
+
+  const entidade = db.entidades.find((e) => e.id === novaEscala.entidade_id);
+  const medium = db.equipe_espiritual.find((m) => m.id === novaEscala.medium_id);
+  const nomeEntidade = entidade?.nome_entidade ?? 'Entidade';
+  const mediumNome = medium?.nome ?? 'Médium';
+  const linha = entidade?.linha ?? null;
+
+  const atdsNovaEscala = db.atendimentos.filter((a) => a.escala_id === novaEscalaId);
+  const maxNumero = atdsNovaEscala.reduce((max, a) => Math.max(max, a.numero_senha || 0), 0);
+  const novoNumero = maxNumero + 1;
+
+  db.atendimentos[atdIdx] = {
+    ...db.atendimentos[atdIdx],
+    escala_id: novaEscalaId,
+    numero_senha: novoNumero,
+    status: 'AGUARDANDO',
+    chamado_em: null,
+    hora_atendimento: null,
+  };
+
+  salvarLocalDb(db);
+
+  atualizarEntidadeComprovanteLocal(atendimentoId, {
+    escala_id: novaEscalaId,
+    numero_senha: novoNumero,
+    nome_entidade: nomeEntidade,
+    medium_nome: mediumNome,
+    linha,
+  });
+
+  return {
+    novoNumeroSenha: novoNumero,
+    nomeEntidade,
+  };
 }
 
 export function subscribeFilaGira(onChange: () => void): () => void {

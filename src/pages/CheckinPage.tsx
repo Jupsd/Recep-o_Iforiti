@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
@@ -6,12 +6,14 @@ import {
   Building2,
   CalendarX2,
   CheckCircle2,
+  Info,
   Loader2,
   Lock,
   RefreshCw,
   ShieldCheck,
   Ticket,
   UserCheck,
+  Users,
 } from 'lucide-react';
 import {
   limparComprovantesExcetoGira,
@@ -50,6 +52,7 @@ export function CheckinPage() {
   const [outroTerreiro, setOutroTerreiro] = useState(false);
   const [nomeOutroTerreiro, setNomeOutroTerreiro] = useState('');
   const [primeiraVez, setPrimeiraVez] = useState(false);
+  const [linhaSelecionada, setLinhaSelecionada] = useState<string>('');
   const [escalaSelecionada, setEscalaSelecionada] = useState<string>('');
 
   const [verificandoTel, setVerificandoTel] = useState(false);
@@ -63,6 +66,50 @@ export function CheckinPage() {
 
   const idadeNumero = idade.trim() ? parseInt(idade, 10) : null;
   const ehIdoso = idadeNumero !== null && !Number.isNaN(idadeNumero) && idadeNumero >= 60;
+
+  const gruposLinha = useMemo(() => {
+    const mapa = new Map<string, DisponibilidadeGira[]>();
+    for (const esc of escalas) {
+      const nomeLinha = esc.linha?.trim() || esc.gira_titulo?.trim() || 'Linha Espiritual da Gira';
+      const lista = mapa.get(nomeLinha) || [];
+      lista.push(esc);
+      mapa.set(nomeLinha, lista);
+    }
+
+    return Array.from(mapa.entries()).map(([linhaNome, listaEscalas]) => {
+      const totalVagas = listaEscalas.reduce(
+        (acc, e) => acc + (e.escala_ativa ? e.vagas_restantes : 0),
+        0
+      );
+      const escalasAtivasComVaga = listaEscalas
+        .filter((e) => e.escala_ativa && e.vagas_restantes > 0)
+        .sort((a, b) => b.vagas_restantes - a.vagas_restantes || a.na_fila - b.na_fila);
+
+      const melhorEscala = escalasAtivasComVaga[0] || listaEscalas[0];
+
+      return {
+        linhaNome,
+        totalVagas,
+        totalEntidades: listaEscalas.length,
+        escalas: listaEscalas,
+        melhorEscalaId: melhorEscala?.escala_id ?? '',
+        nomesEntidades: listaEscalas.map((e) => e.nome_entidade).join(', '),
+      };
+    });
+  }, [escalas]);
+
+  useEffect(() => {
+    if (gruposLinha.length > 0) {
+      const linhaAtual = gruposLinha.find((g) => g.linhaNome === linhaSelecionada);
+      if (!linhaAtual || linhaAtual.totalVagas <= 0) {
+        const primeiraComVaga = gruposLinha.find((g) => g.totalVagas > 0) || gruposLinha[0];
+        setLinhaSelecionada(primeiraComVaga.linhaNome);
+        setEscalaSelecionada(primeiraComVaga.melhorEscalaId);
+      } else {
+        setEscalaSelecionada(linhaAtual.melhorEscalaId);
+      }
+    }
+  }, [gruposLinha, linhaSelecionada]);
 
   const carregarGira = useCallback(async () => {
     try {
@@ -517,32 +564,52 @@ export function CheckinPage() {
                 </div>
               </section>
 
-              {/* Bloco 2: Escolha a Entidade */}
+              {/* Bloco 2: Escolha da Linha de Trabalho */}
               <section className="space-y-3">
                 <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
                   <span className="w-7 h-7 rounded-full bg-terreiro-700 text-white text-sm font-bold flex items-center justify-center">
                     2
                   </span>
-                  <h2 className="text-base font-bold text-slate-900">
-                    Escolha a Entidade para Atendimento
-                  </h2>
+                  <div>
+                    <h2 className="text-base font-bold text-slate-900">
+                      Linha de Trabalho para Atendimento
+                    </h2>
+                    <p className="text-xs text-slate-500">
+                      As senhas são distribuídas conforme a linha de trabalho da gira.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Box de Informação sobre escolha de entidade na Recepção */}
+                <div className="p-3.5 rounded-2xl bg-sky-50 border border-sky-200 text-xs text-sky-950 space-y-1.5">
+                  <div className="flex items-center gap-1.5 font-bold text-sky-900">
+                    <Info className="w-4 h-4 text-sky-700 shrink-0" />
+                    <span>Distribuição Equilibrada por Linha</span>
+                  </div>
+                  <p className="text-slate-700 leading-relaxed">
+                    Sua senha é distribuída de forma equilibrada para uma das entidades e médiuns desta linha espiritual.
+                  </p>
+                  <p className="text-sky-900 font-semibold bg-white p-2.5 rounded-xl border border-sky-200 leading-snug">
+                    👉 <strong>Deseja atendimento com uma entidade específica?</strong> Dirija-se até a <strong>Recepção / Cambono</strong> para que sua ficha seja colocada no <strong>final da fila</strong> daquela entidade.
+                  </p>
                 </div>
 
                 <div className="space-y-2.5">
-                  {escalas.map((item) => {
-                    const pausada = !item.escala_ativa;
-                    const esgotada = item.vagas_restantes <= 0;
-                    const desabilitada = pausada || esgotada;
-                    const selecionada = escalaSelecionada === item.escala_id && !desabilitada;
+                  {gruposLinha.map((item) => {
+                    const esgotada = item.totalVagas <= 0;
+                    const selecionada = linhaSelecionada === item.linhaNome && !esgotada;
 
                     return (
                       <button
-                        key={item.escala_id}
+                        key={item.linhaNome}
                         type="button"
-                        disabled={desabilitada}
-                        onClick={() => setEscalaSelecionada(item.escala_id)}
+                        disabled={esgotada}
+                        onClick={() => {
+                          setLinhaSelecionada(item.linhaNome);
+                          setEscalaSelecionada(item.melhorEscalaId);
+                        }}
                         className={`w-full text-left rounded-2xl border-2 p-4 min-h-[72px] transition flex items-center justify-between gap-3 ${
-                          desabilitada
+                          esgotada
                             ? 'bg-slate-100 border-slate-200 opacity-70 cursor-not-allowed'
                             : selecionada
                               ? 'bg-terreiro-50 border-terreiro-700 ring-2 ring-terreiro-200 shadow-sm'
@@ -552,7 +619,7 @@ export function CheckinPage() {
                         <div className="flex items-start gap-3 min-w-0">
                           <div
                             className={`mt-1 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                              desabilitada
+                              esgotada
                                 ? 'border-slate-400 bg-slate-200'
                                 : selecionada
                                   ? 'border-terreiro-700 bg-terreiro-700'
@@ -564,34 +631,32 @@ export function CheckinPage() {
 
                           <div className="min-w-0">
                             <p className="font-bold text-slate-900 text-base leading-snug">
-                              {item.nome_entidade}
+                              {item.linhaNome}
                             </p>
-                            <p className="text-sm text-slate-600 mt-0.5">
-                              Médium: <span className="font-medium">{item.medium_nome}</span>
-                              {item.linha ? ` • ${item.linha}` : ''}
+                            <p className="text-xs text-slate-600 mt-1 flex items-center gap-1.5">
+                              <Users className="w-3.5 h-3.5 text-terreiro-700 shrink-0" />
+                              <span className="truncate">
+                                Entidades: <strong className="text-slate-800">{item.nomesEntidades}</strong>
+                              </span>
                             </p>
                           </div>
                         </div>
 
-                        <div className="shrink-0">
-                          {pausada ? (
-                            <span className="inline-block px-3 py-1 rounded-full text-xs font-extrabold uppercase bg-slate-200 text-slate-700">
-                              PAUSADO
-                            </span>
-                          ) : esgotada ? (
+                        <div className="shrink-0 text-right">
+                          {esgotada ? (
                             <span className="inline-block px-3 py-1 rounded-full text-xs font-extrabold uppercase bg-red-100 text-red-700 border border-red-200">
                               ESGOTADO
                             </span>
                           ) : (
                             <span
                               className={`inline-block px-3 py-1 rounded-full text-xs font-extrabold ${
-                                item.vagas_restantes <= 2
+                                item.totalVagas <= 3
                                   ? 'bg-amber-100 text-amber-800 border border-amber-300'
                                   : 'bg-terreiro-100 text-terreiro-800 border border-terreiro-200'
                               }`}
                             >
-                              {item.vagas_restantes}{' '}
-                              {item.vagas_restantes === 1 ? 'vaga' : 'vagas'}
+                              {item.totalVagas}{' '}
+                              {item.totalVagas === 1 ? 'vaga' : 'vagas'}
                             </span>
                           )}
                         </div>

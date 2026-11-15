@@ -115,11 +115,8 @@ export function SenhaPage() {
           statusAnteriorRef.current = res.status;
         }
         atualizarStatusComprovanteLocal(alvo.atendimento_id, res.status);
-        setComprovante((prev) =>
-          prev && prev.atendimento_id === alvo.atendimento_id
-            ? { ...prev, status: res.status }
-            : prev
-        );
+        const atualizadoLocal = obterComprovanteAtivoLocal(alvo.gira_id);
+        setComprovante(atualizadoLocal || { ...alvo, status: res.status });
       } catch {
         setOnline(false);
       } finally {
@@ -140,14 +137,20 @@ export function SenhaPage() {
         sincronizarComServidor(comprovante);
       }
     };
+    const onStorage = () => {
+      const atual = obterComprovanteAtivoLocal();
+      if (atual) setComprovante(atual);
+    };
 
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
+    window.addEventListener('storage', onStorage);
     document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
       window.removeEventListener('online', onOnline);
       window.removeEventListener('offline', onOffline);
+      window.removeEventListener('storage', onStorage);
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [comprovante, sincronizarComServidor]);
@@ -292,8 +295,8 @@ export function SenhaPage() {
             <BellRing className="w-7 h-7 shrink-0" />
             <div>
               <p className="font-extrabold text-base">CHEGOU A SUA VEZ!</p>
-              <p className="text-sm text-sky-50">
-                Dirija-se ao atendimento com {comprovante.nome_entidade}.
+              <p className="text-sm text-sky-50 font-medium">
+                👉 Por favor, dirija-se até a <span className="font-extrabold underline">RECEPÇÃO</span> do terreiro para seu atendimento com {comprovante.nome_entidade}.
               </p>
             </div>
           </div>
