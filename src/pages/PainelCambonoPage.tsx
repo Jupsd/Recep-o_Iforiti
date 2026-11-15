@@ -281,6 +281,10 @@ export function PainelCambonoPage() {
         telefone: item.consulente_telefone,
         primeiraVez: item.primeira_vez,
         orientacoes: obterTextoOrientacao(item).trim() || null,
+        idade: item.idade,
+        preferencial: item.preferencial,
+        outroTerreiro: item.outro_terreiro,
+        nomeOutroTerreiro: item.nome_outro_terreiro,
       });
 
       if (finalizarDepois) {
