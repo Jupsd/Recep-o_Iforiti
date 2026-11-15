@@ -1,5 +1,4 @@
 // Gerenciador de Áudio Web e Notificações Sonoras para iOS (iPhone/Safari), Android e Desktop
-import { TERREIRO_NOME } from './format';
 
 let sharedAudioContext: AudioContext | null = null;
 let audioInicializado = false;

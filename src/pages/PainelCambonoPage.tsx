@@ -768,17 +768,17 @@ export function PainelCambonoPage() {
                                     ? gerarMensagemWhatsAppOrientacoes({
                                         consulenteNome: item.consulente_nome,
                                         numeroSenha: item.numero_senha,
-                                        nomeEntidade: item.nome_entidade,
-                                        mediumNome: item.medium_nome,
-                                        dataGira: giraAberta?.data_gira,
-                                        giraTitulo: giraAberta?.titulo,
+                                        nomeEntidade: escalaSelecionada?.nome_entidade ?? 'Atendimento',
+                                        mediumNome: escalaSelecionada?.medium_nome,
+                                        dataGira: escalaSelecionada?.data_gira,
+                                        giraTitulo: escalaSelecionada?.gira_titulo,
                                         orientacoes: item.orientacoes,
                                       })
                                     : gerarMensagemWhatsAppChamada({
                                         consulenteNome: item.consulente_nome,
                                         numeroSenha: item.numero_senha,
-                                        nomeEntidade: item.nome_entidade,
-                                        mediumNome: item.medium_nome,
+                                        nomeEntidade: escalaSelecionada?.nome_entidade ?? 'Atendimento',
+                                        mediumNome: escalaSelecionada?.medium_nome,
                                       })
                                 )}`}
                                 target="_blank"
@@ -1021,8 +1021,8 @@ export function PainelCambonoPage() {
                                   gerarMensagemWhatsAppChamada({
                                     consulenteNome: item.consulente_nome,
                                     numeroSenha: item.numero_senha,
-                                    nomeEntidade: item.nome_entidade,
-                                    mediumNome: item.medium_nome,
+                                    nomeEntidade: escalaSelecionada?.nome_entidade ?? 'Atendimento',
+                                    mediumNome: escalaSelecionada?.medium_nome,
                                   })
                                 )}`}
                                 target="_blank"

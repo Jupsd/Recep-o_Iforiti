@@ -20,7 +20,6 @@ import {
   gerarMensagemWhatsAppOrientacoes,
   limparDigitos,
   STATUS_ATENDIMENTO_LABEL,
-  TERREIRO_NOME,
 } from '../lib/format';
 import { exportarFichaConsulentePDF } from '../lib/pdfExport';
 import {
